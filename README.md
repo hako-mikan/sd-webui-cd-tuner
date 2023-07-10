@@ -2,7 +2,7 @@
 Color/Detail control for Stable Diffusion web-ui/色調や書き込み量を調節するweb-ui拡張です。
 
 [日本語](#使い方)
-![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample0.jpg)
+![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample0.png)
 
 This is an extension to modify the amount of detailing and color tone in the output image. It intervenes in the generation process, not on the image after it's generated. It works on a mechanism different from LoRA and is compatible with 1.X and 2.X series. In particular, it can significantly improve the quality of generated products during Hires.fix.
 
@@ -28,14 +28,14 @@ In the case of using Hires-fix, the optimal settings often differ from the usual
 You can specify the value in prompt by entering in the following format. Please use this if you want to use it in XYZ plot.
 
 ```
-<cdt:d1=2,col1=-3>
-<cdt:d2=2,hrs=1>
+<cdt:d1=2;col1=-3>
+<cdt:d2=2;hrs=1>
 <cdt:1>
-<cdt:0,0,0,-2.3,0,2>
-<cdt:0,0,0,-2.3,0,2,0,0,1> 
+<cdt:0;0;0;-2.3;0,2>
+<cdt:0;0;0;-2.3;0;2;0;0;1> 
 ```
 
-The available identifiers are `d1,d2,cont,col1,col2,col3,hd1,hd2,hrs`. When describing in the format of `0,0,0...`, please write in this order. It is okay to fill in up to the necessary places. If you write `1,0,4`, `d1,d2,cont` will be set automatically and the rest will be `0`. `hrs` turns on when a number other than `0` is entered.
+The available identifiers are `d1,d2,cont,col1,col2,col3,hd1,hd2,hrs`. When describing in the format of `0,0,0...`, please write in this order. It is okay to fill in up to the necessary places. The delimiter is a semicolon (;). If you write `1,0,4`, `d1,d2,cont` will be set automatically and the rest will be `0`. `hrs` turns on when a number other than `0` is entered.
 This value will be prioritized if a value other than `0` is set.
 At this time, `Skipping unknown extra network: cdt` will be displayed, but this is normal operation.
 
@@ -43,6 +43,8 @@ At this time, `Skipping unknown extra network: cdt` will be displayed, but this 
 The left is before use, the right is after use. Click the image to enlarge it. Here, we are increasing the amount of drawing and making it blue. The difference is clearer when enlarged.
 
 You can expect an improvement in reality with real-series models.
+![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample4.png)
+![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample5.png)
 
 # Color/Detail control for Stable Diffusion web-ui
 出力画像の描き込み量や色調を変更する拡張機能です。生成後の画像に対してではなく生成過程に介入します。LoRAとは異なる仕組みで動いています。2.X系統にも対応しています。特にHires.fix時の生成品質を大幅に向上させることができます。
@@ -69,18 +71,18 @@ Hires-fixを使用する場合、最適な設定値が通常とは異なる場�
 promptに以下の書式で入力することでpromptで値を指定できます。XYZ plotで利用したい場合にはこちらを利用して下さい。
 
 ```
-<cdt:d1=2,col1=-3>
-<cdt:d2=2,hrs=1>
+<cdt:d1=2;col1=-3>
+<cdt:d2=2;hrs=1>
 <cdt:1>
-<cdt:0,0,0,-2.3,0,2>
-<cdt:0,0,0,-2.3,0,2,0,0,1> 
+<cdt:0;0;0;-2.3;0,2>
+<cdt:0;0;0;-2.3;0;2;0;0;1> 
 ```
 
-使用できる識別子は`d1,d2,cont,col1,col2,col3,hd1,hd2,hrs`です。`0,0,0...`の形式で記述する場合にはこの順に書いてください。記入は必要なところまでで大丈夫です。`1,0,4`なら自動的に`cont`までが設定され残りは`0`になります。`hrs`は`0`以外の数値が入力されるとオンになります。
+使用できる識別子は`d1,d2,cont,col1,col2,col3,hd1,hd2,hrs`です。`0,0,0...`の形式で記述する場合にはこの順に書いてください。区切りはセミコロン「;」です。記入は必要なところまでで大丈夫です。`1,0,4`なら自動的に`cont`までが設定され残りは`0`になります。`hrs`は`0`以外の数値が入力されるとオンになります。
 `0`以外の値が設定されている場合にはこちらの値が優先されます。
 このとき`Skipping unknown extra network: cdt`と表示されますが正常な動作です。
 
 ## 使用例
-左が使用前、右が使用後です。画像をクリックすると拡大します。ここでは書き込み量を増やし青くしています。拡大すると差がはっきりとします。
-
 リアル系モデルでリアリティの向上が見込めます。
+![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample4.png)
+![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample5.png)
