@@ -11,7 +11,7 @@ It automatically activates when any value is set to non-zero. Please be careful 
 
 ### Detail1,2 Drawing/Noise Amount
 When set to negative, it becomes flat and slightly blurry. When set to positive, the detailing increases and becomes noisy. Even if it is noisy in normal generation, it might become clean with hires.fix, so be careful. Detail1 and 2 both have similar effects, but Detail1 seems to have a stronger effect on the composition. In the case of 2.X series, the reaction of Detail 1 may be the opposite of normal, with more drawings in negative.
-![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample1.jpg)
+![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample1.png)
 
 ### Contrast: Contrast/Drawing Amount
 Contrast and brightness change, and at the same time the amount of detailing also changes. It would be quicker to see the sample.
@@ -54,7 +54,7 @@ You can expect an improvement in reality with real-series models.
 
 ### Detail1,2 描き込み量/ノイズ
 マイナスにするとフラットに、そして少しぼけた感じに。プラスにすると描き込みが増えノイジーになります。通常の生成でノイジーでもhires.fixできれいになることがあるので注意してください。Detail1,2共に同様の効果がありますが、Detail1は2に比べて構図への影響が強く出るようです。2.X系統の場合、Detail 1の反応が通常とは逆になり、マイナスで書き込みが増える場合があるようです。
-![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample1.jpg)
+![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample1.png)
 
 ### Contrast : コントラスト/描き込み量
 コントラストや明るさがかわり、同時に描き込み量も変わります。サンプルを見てもらった方が早いですね。
