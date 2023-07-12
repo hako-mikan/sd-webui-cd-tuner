@@ -2,6 +2,12 @@
 Color/Detail control for Stable Diffusion web-ui/色調や書き込み量を調節するweb-ui拡張です。
 
 [日本語](#使い方)
+
+Update 2023.07.13.0030(JST)
+- add brightness
+- color adjusting method is changed
+- add disable checkbox
+
 ![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample0.png)
 
 This is an extension to modify the amount of detailing and color tone in the output image. It intervenes in the generation process, not on the image after it's generated. It works on a mechanism different from LoRA and is compatible with 1.X and 2.X series. In particular, it can significantly improve the quality of generated products during Hires.fix.
@@ -13,12 +19,14 @@ It automatically activates when any value is set to non-zero. Please be careful 
 When set to negative, it becomes flat and slightly blurry. When set to positive, the detailing increases and becomes noisy. Even if it is noisy in normal generation, it might become clean with hires.fix, so be careful. Detail1 and 2 both have similar effects, but Detail1 seems to have a stronger effect on the composition. In the case of 2.X series, the reaction of Detail 1 may be the opposite of normal, with more drawings in negative.
 ![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample1.png)
 
-### Contrast: Contrast/Drawing Amount
+### Contrast: Contrast/Drawing Amount, Brightness
 Contrast and brightness change, and at the same time the amount of detailing also changes. It would be quicker to see the sample.
+The difference between Contrast 1 and Contrast 2 lies in whether the adjustment is made during the generation process or after the generation is complete. Making the adjustment during the generation process results in a more natural outcome, but it may also alter the composition.
 ![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample2.jpg)
 
 ### Color1,2,3 Color Tone
 You can tune the color tone. For `Cyan-Red`, it becomes `Cyan` when set to negative and `Red` when set to positive.
+
 ![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample3.jpg)
 
 ### Hr-Detail1,2 ,Hires-Scaling
@@ -35,7 +43,7 @@ You can specify the value in prompt by entering in the following format. Please 
 <cdt:0;0;0;-2.3;0;2;0;0;1> 
 ```
 
-The available identifiers are `d1,d2,cont,col1,col2,col3,hd1,hd2,hrs`. When describing in the format of `0,0,0...`, please write in this order. It is okay to fill in up to the necessary places. The delimiter is a semicolon (;). If you write `1,0,4`, `d1,d2,cont` will be set automatically and the rest will be `0`. `hrs` turns on when a number other than `0` is entered.
+The available identifiers are `d1,d2,con1,con2,bri,col1,col2,col3,hd1,hd2,hrs,st1,st2`. When describing in the format of `0,0,0...`, please write in this order. It is okay to fill in up to the necessary places. The delimiter is a semicolon (;). If you write `1,0,4`, `d1,d2,cont` will be set automatically and the rest will be `0`. `hrs` turns on when a number other than `0` is entered.
 This value will be prioritized if a value other than `0` is set.
 At this time, `Skipping unknown extra network: cdt` will be displayed, but this is normal operation.
 
@@ -58,11 +66,11 @@ You can expect an improvement in reality with real-series models.
 
 ### Contrast : コントラスト/描き込み量
 コントラストや明るさがかわり、同時に描き込み量も変わります。サンプルを見てもらった方が早いですね。
-![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample2.jpg)
+![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample7.png)
 
 ### Color1,2,3 色調
 色調を補正できます。`Cyan-Red`ならマイナスにすると`Cyan`、プラスにすると`Red`になります。
-![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample3.jpg)
+![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample6.png)
 
 ### Hr-Detail1,2 ,Hires-Scaling
 Hires-fixを使用する場合、最適な設定値が通常とは異なる場合が多いです。基本的にはHires-Fix使用時には未使用時より大きめの値を入れた方が良い結果が得られます。Hr-Detail1,2ではHires-Fix生成時に未使用時とは異なる値を設定したい場合に使用します。Hires-Scalingは自動的にHires-Fix使用時の値を設定する機能です。おおむねHires-scaleの2乗の値が元の値に掛けられます。
@@ -78,7 +86,7 @@ promptに以下の書式で入力することでpromptで値を指定できま�
 <cdt:0;0;0;-2.3;0;2;0;0;1> 
 ```
 
-使用できる識別子は`d1,d2,cont,col1,col2,col3,hd1,hd2,hrs`です。`0,0,0...`の形式で記述する場合にはこの順に書いてください。区切りはセミコロン「;」です。記入は必要なところまでで大丈夫です。`1,0,4`なら自動的に`cont`までが設定され残りは`0`になります。`hrs`は`0`以外の数値が入力されるとオンになります。
+使用できる識別子は`d1,d2,con1,con2,bri,col1,col2,col3,hd1,hd2,hrs,st1,st2`です。`0,0,0...`の形式で記述する場合にはこの順に書いてください。区切りはセミコロン「;」です。記入は必要なところまでで大丈夫です。`1,0,4`なら自動的に`cont`までが設定され残りは`0`になります。`hrs`は`0`以外の数値が入力されるとオンになります。
 `0`以外の値が設定されている場合にはこちらの値が優先されます。
 このとき`Skipping unknown extra network: cdt`と表示されますが正常な動作です。
 
