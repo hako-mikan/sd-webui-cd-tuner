@@ -22,12 +22,12 @@ When set to negative, it becomes flat and slightly blurry. When set to positive,
 ### Contrast: Contrast/Drawing Amount, Brightness
 Contrast and brightness change, and at the same time the amount of detailing also changes. It would be quicker to see the sample.
 The difference between Contrast 1 and Contrast 2 lies in whether the adjustment is made during the generation process or after the generation is complete. Making the adjustment during the generation process results in a more natural outcome, but it may also alter the composition.
-![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample2.jpg)
+![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample7.png)
 
 ### Color1,2,3 Color Tone
 You can tune the color tone. For `Cyan-Red`, it becomes `Cyan` when set to negative and `Red` when set to positive.
 
-![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample3.jpg)
+![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample6.png)
 
 ### Hr-Detail1,2 ,Hires-Scaling
 In the case of using Hires-fix, the optimal settings often differ from the usual. Basically, when using Hires-Fix, it is better to input larger values than when not using it. Hr-Detail1,2 is used when you want to set a different value from when not used during Hires-Fix generation. Hires-Scaling is a feature that automatically sets the value at the time of Hires-Fix. The value of Hires-scale squared is usually multiplied by the original value.
