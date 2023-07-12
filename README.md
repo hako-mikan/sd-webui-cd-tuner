@@ -47,6 +47,9 @@ The available identifiers are `d1,d2,con1,con2,bri,col1,col2,col3,hd1,hd2,hrs,st
 This value will be prioritized if a value other than `0` is set.
 At this time, `Skipping unknown extra network: cdt` will be displayed, but this is normal operation.
 
+### Stop Step
+You can specify the number of steps to stop the adjustment. In Hires-Fix, the effects are often not noticeable after the initial few steps. This is because in most samplers, a rough image is already formed within the first 10 steps.
+
 ## Examples of use
 The left is before use, the right is after use. Click the image to enlarge it. Here, we are increasing the amount of drawing and making it blue. The difference is clearer when enlarged.
 
@@ -89,6 +92,9 @@ promptに以下の書式で入力することでpromptで値を指定できま�
 使用できる識別子は`d1,d2,con1,con2,bri,col1,col2,col3,hd1,hd2,hrs,st1,st2`です。`0,0,0...`の形式で記述する場合にはこの順に書いてください。区切りはセミコロン「;」です。記入は必要なところまでで大丈夫です。`1,0,4`なら自動的に`cont`までが設定され残りは`0`になります。`hrs`は`0`以外の数値が入力されるとオンになります。
 `0`以外の値が設定されている場合にはこちらの値が優先されます。
 このとき`Skipping unknown extra network: cdt`と表示されますが正常な動作です。
+
+### stop step
+補正を停止するステップ数を指定できます。Hires-Fixでは最初の数ステップ以降は効果が感じられないことが多いです。大概のサンプラーで10ステップ絵までには大まかな絵ができあがっているからです。
 
 ## 使用例
 リアル系モデルでリアリティの向上が見込めます。
