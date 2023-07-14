@@ -105,10 +105,9 @@ class Script(modules.scripts.Script):
 
         return params
 
-    def process(self, p, d1,d2,cont1,cont2,bri,col1,col2,col3,hd1,hd2,scaling,stop,stoph,disable):
+    def process_batch(self, p, d1,d2,cont1,cont2,bri,col1,col2,col3,hd1,hd2,scaling,stop,stoph,disable,**kwargs):
         if (self.done[0] or self.done[1]) and self.storedweights and self.storedname == shared.opts.sd_model_checkpoint:
             restoremodel()
-
 
         allsets = [d1,d2,cont1,cont2,bri,col1,col2,col3,hd1,hd2,1 if scaling else 0,stop,stoph,0]
 
@@ -149,7 +148,7 @@ class Script(modules.scripts.Script):
         if not hasattr(self,"cdt_dd_callbacks"):
             self.cdt_dd_callbacks = on_cfg_denoised(self.denoised_callback)
 
-    def postprocess(self, p, processed, *args):
+    def postprocess_batch(self, p, *args,**kwargs):
         if True in self.done: restoremodel(self)
         self.done = [False,False]
 
