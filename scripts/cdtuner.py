@@ -107,7 +107,7 @@ class Script(modules.scripts.Script):
 
     def process_batch(self, p, d1,d2,cont1,cont2,bri,col1,col2,col3,hd1,hd2,scaling,stop,stoph,disable,**kwargs):
         if (self.done[0] or self.done[1]) and self.storedweights and self.storedname == shared.opts.sd_model_checkpoint:
-            restoremodel()
+            restoremodel(self)
 
         allsets = [d1,d2,cont1,cont2,bri,col1,col2,col3,hd1,hd2,1 if scaling else 0,stop,stoph,0]
 
