@@ -182,9 +182,9 @@ class Script(modules.scripts.Script):
             for i,name in enumerate(ADJUSTS):
                 if name not in self.storedweights.keys(): self.storedweights[name] = getset_nested_module_tensor(True, shared.sd_model, name).clone()
                 if 4 > i:
-                    new_weight = self.storedweights[name] * ratios[i]
+                    new_weight = self.storedweights[name].to(devices.device) * ratios[i]
                 else:
-                    new_weight = self.storedweights[name] +  torch.tensor(ratios[i]).to(devices.device)
+                    new_weight = self.storedweights[name].to(devices.device) +  torch.tensor(ratios[i]).to(devices.device)
                 getset_nested_module_tensor(False,shared.sd_model, name, new_tensor = new_weight)
             
             self.shape = params.x.shape
