@@ -231,7 +231,7 @@ def getset_nested_module_tensor(clone,model, tensor_path, new_tensor = None):
 
 def restoremodel(self):
     for name in ADJUSTS:
-        getset_nested_module_tensor(False,shared.sd_model, name, new_tensor = self.storedweights[name].clone())
+        getset_nested_module_tensor(False,shared.sd_model, name, new_tensor = self.storedweights[name].clone().to(devices.device))
     if debug:print("Restored")
     return
 
