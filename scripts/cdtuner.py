@@ -124,6 +124,8 @@ class Script(modules.scripts.Script):
 
         if debug: print("\n",allsets)
 
+        self.isxl = hasattr(shared.sd_model,"conditioner")
+
         if any(not(type(x) == float or type(x) == int) for x in allsets):return
         if all(x == 0 for x in allsets[:-3]):return
         else: 
@@ -194,7 +196,7 @@ class Script(modules.scripts.Script):
             if self.ehr and not self.hr: return
             if params.sampling_step == params.total_sampling_steps-2 -self.sts[2]: 
                 if any(x != 0 for x in self.ddratios):
-                    ratios = [self.ddratios[0] * 0.02] +  colorcalc(self.ddratios[1:])
+                    ratios = [self.ddratios[0] * 0.02] +  colorcalc(self.ddratios[1:],self.isxl)
                     print(f"\nCD Tuner After Generation Effective: {ratios}")
                     for i, x in enumerate(ratios):
                         params.x[:,i,:,:] = params.x[:,i,:,:] - x * 20/3
@@ -243,8 +245,9 @@ def fineman(fine):
                 ]
     return fine
 
-def colorcalc(cols):
-    outs = [[y * cols[i] * 0.02 for y in x] for i,x in enumerate(COLS)]
+def colorcalc(cols,isxl):
+    colors = COLSXL if isxl else COLS
+    outs = [[y * cols[i] * 0.02 for y in x] for i,x in enumerate(colors)]
     return [sum(x) for x in zip(*outs)]
 
 def fromprompts(prompt):
@@ -284,3 +287,4 @@ ADJUSTS =[
 IDENTIFIER = ["d1","d2","con1","con2","bri","col1","col2","col3","hd1","hd2","hrs","st1","st2","st3","dis"]
 
 COLS = [[-1,1/3,2/3],[1,1,0],[0,-1,-1],[1,0,1]]
+COLSXL = [[0,0,1],[1,0,0],[-1,-1,0],[-1,1,0]]
