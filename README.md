@@ -3,6 +3,10 @@ Color/Detail control for Stable Diffusion web-ui/色調や書き込み量を調�
 
 [日本語](#使い方)
 
+Update 2023.08.19.0200 (JST)
+- add new feature:[Direct Color Control](#direct-color-control)
+- 新機能：[色補正](#色補正)
+
 Update 2023.07.13.0030(JST)
 - add brightness
 - color adjusting method is changed
@@ -57,6 +61,60 @@ You can expect an improvement in reality with real-series models.
 ![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample4.png)
 ![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample5.png)
 
+# Direct Color Control
+Enhance the responsiveness of prompts by controlling the color of the noise during the generation process. Color settings can either be uniform or set by dividing the screen.
+
+## How to Use
+Operate within the Color Map tab.
+
+### Split by
+Determine the direction to split the range for color setting. The result is the same for a single color. If set to "Horizonal", it will split horizontally, separating it into upper and lower directions.
+
+### Split Ratio
+Set the ratio for division. The format is the same as the Regional Prompter. While dividing in the vertical direction, horizontal division within is also possible. For a single color, simply input "1".
+```
+1,1,1,1
+
+```
+In this case, it is simply quartered.
+```
+3,1,2,1
+
+```
+For this example, it will be divided into a 3:1:2:1 ratio.  
+To add further divisions, separate with `;`.
+```
+2,1,3;3,4,6
+
+```
+For this example, the ratio split by `;` becomes the sub-region ratio. Within the sub-region, the first number (2,3) represents the primary direction ratio, while the next two represent the ratio within the sub-region.
+![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/csample1.png)
+![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/csample2.png)
+
+### colors
+Specify with either 3 or 4 values. These correspond to Brightness, Cyan-Red, Magenta-Green, and Yellow-Blue respectively.
+5 has been set as the optimal value.
+When you input 3 values, they are treated as specifications for the three colors. If you input 4 values, they include Brightness in the value. Separators can be a space or a `,`. For separating areas, you can use `;` or `|`. When specifying within a prompt, please use `|`. The example provided:
+```
+5 0 0;0 5 5;0 0 -5;5 5 5
+```
+indicates red, blue, yellow, and purple respectively. For color specifications, please refer to the table provided at the end.
+
+### Map Stop Step/Strength
+Specify the number of steps for color correction and the intensity of the correction. Typically, it is Step 1-3, Strength 1, but it's also possible to extend the step count (e.g., 10) and decrease the strength (e.g., 0.5).
+
+### Effects of Correction
+While a certain input is specified in this correction, it doesn't mean that the area will have that exact color. Although we're changing the color of the noise, images are generated based on the relationship between the prompt and the color. If the prompt does not have anything related to color, it might be disregarded. The image below was generated with the prompt `sea, autumn, girl` and color corrections to blue on the left and red on the right. `sea` responds to the blue noise, and `autumn` to the red noise, thus resulting in the image below. Think of it as a correction to enhance the responsiveness of the prompt.
+![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/csample3.png)
+
+### Specification in the Prompt
+Specify using "sp" (Split ratio), "by" (Split by), "cols" (colors), "stc" (Stop Step), and "str" (Strength), or input values in this order. For md, abbreviations `H` and `V` can be used.
+```
+<cdtc:1,1;H;5 0 0|-5 0 0;2;1>
+<cdtc:by=H;str=1.1>
+```
+
+
 # Color/Detail control for Stable Diffusion web-ui
 出力画像の描き込み量や色調を変更する拡張機能です。生成後の画像に対してではなく生成過程に介入します。LoRAとは異なる仕組みで動いています。2.X系統にも対応しています。特にHires.fix時の生成品質を大幅に向上させることができます。
 
@@ -100,3 +158,84 @@ promptに以下の書式で入力することでpromptで値を指定できま�
 リアル系モデルでリアリティの向上が見込めます。
 ![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample4.png)
 ![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample5.png)
+
+# 色補正
+生成過程においてノイズの色をコントロールすることでプロンプトの反応をよくします。色の設定は単色あるいは画面を分割して設定することが可能です。
+## 使い方
+Color Mapタブで操作します。
+### Split by
+色を設定する範囲を分割する方向を設定します。単色の場合どちらでも同じ結果になります。Horizonalだと水平線で分割するために上下方向に分かれます。
+
+### Split Ratio
+分割する比率を設定します。Regional Prompterと同じ書式です。上下方向に分割しつつ、その中で横方向に分割することが可能です。単色の場合は1と入力すればいいです。
+```
+1,1,1,1
+
+```
+の場合、単純に四分割されます。
+```
+3,1,2,1
+
+```
+の場合、3:1:2:1に分割されます。  
+追加の分割を行いたい場合は`;`で区切ります。
+
+```
+2,1,3;3,4,6
+
+```
+の場合、`;`で区切られた比率が副領域の比率になります。副領域の中で、最初の数値(2,3)が主方向の比率、残りの二つが副領域内の比率になります。  
+![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/csample1.png)
+![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/csample2.png)
+
+### colors
+3あるいは4つの数値で指定します。それぞれBrightness,Cyan-Red,Magenta-Green,Yellow-Blueに対応します。
+5が最適になるようになっています。
+3つの数値を入力した場合、三色の指定として扱われ、4つの数値を入力するとBrightness込みの値として扱われます。区切りは半角スペースあるいは`,`が使えます。領域ごとの区切りには`;`か`|`が使えます。プロンプト中で指定する場合には`|`を用いてください。例で出している
+```
+5 0 0;0 5 5;0 0 -5;5 5 5
+```
+はそれぞれ赤、青、黄色、紫を指定しています。色の指定は最後にある対照表を参考にしてください。
+
+### Map Stop Step/Strength
+色の補正を行うステップ数をと、補正の強さを指定します。基本はStep 1～3,Strength 1ですが、ステップ数を長くして(10)Strengthを小さくする(0.5)運用も可能です。
+
+### 補正の影響について
+この補正では入りを指定していますが、その領域がその色になるわけではありません。ノイズの色を変えていますが、プロンプトと色の関係から画像が生成されるので、プロンプトに色に関係のあるものがないと無視されることがあります。以下の画像は`sea, autumn, girl`というプロンプトと、左右に青と赤を補正して生成した画像です。`sea`は青いノイズに反応し、`autumn`は赤いノイズに反応するので以下のような画像が生成されます。あくまでプロンプトの反応をよくする補正だと考えてください。
+![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/csample3.png)
+
+### prompt中の指定
+"sp"(Spilt ratio),"by"(Split by),"cols"(colors),"stc"(Stop Step),"str"(Strength)で指定するか、この順に値を入れてください。mdは`H`,`V`の略が使用可能です。
+```
+<cdtc:1,1;H;5 0 0|-5 0 0;2;1>
+<cdtc:by=H;str=1.1>
+```
+
+|   |  |     |
+|----------------------|---------------------|----------|
+|Cyan|シアン|-5 0 0|
+|Magenda|マゼンダ|0 -5 0|
+|Yellow|黄色|0 0 -5|
+|Red|赤|5 0 0|
+|Green|緑|0 5 0|
+|Blue|青|0 0 5|
+|VeryLightBlue|水色|-5 -5 0|
+|YellowGreen|黄緑|-5 0 -5|
+|Orange|オレンジ|0 -5 -5|
+|Malachite|マラカイト|-5 5 0|
+|BrightCyan|明るいシアン|-5 0 5|
+|VioretPink|バイオレットピンク|0 -5 5|
+|DeepPink|深ピンク|5 -5 0|
+|GuardsmanRed|朱色|5 0 -5|
+|DeepGreen|深緑|0 5- 5|
+|Black|黒|5 5 0|
+|BrightNeonPink|ネオンピンク|5 0 5|
+|NeonBlue|ネオン青|0 5 5|
+|GreenYellow|緑黄色|-5 -5 -5|
+|LightBlue|明るい青|-5 -5 5|
+|LimeGreen|ライム|-5 5 -5|
+|BrightCyan|明るいシアン|-5 5 5|
+|Red|赤|5 -5 -5|
+|DeepPink|深ピンク|5 -5 5|
+|DeepBrown|焦茶色|5 5 -5|
+|VioletBlue|青紫|5 5 5|
