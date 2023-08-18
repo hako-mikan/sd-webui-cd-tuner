@@ -104,7 +104,7 @@ indicates red, blue, yellow, and purple respectively. For color specifications, 
 Specify the number of steps for color correction and the intensity of the correction. Typically, it is Step 1-3, Strength 1, but it's also possible to extend the step count (e.g., 10) and decrease the strength (e.g., 0.5).
 
 ### Effects of Correction
-While a certain input is specified in this correction, it doesn't mean that the area will have that exact color. Although we're changing the color of the noise, images are generated based on the relationship between the prompt and the color. If the prompt does not have anything related to color, it might be disregarded. The image below was generated with the prompt `sea, autumn, girl` and color corrections to blue on the left and red on the right. `sea` responds to the blue noise, and `autumn` to the red noise, thus resulting in the image below. Think of it as a correction to enhance the responsiveness of the prompt.
+While a certain colors is specified in this correction, it doesn't mean that the area will have that exact color. Although we're changing the color of the noise, images are generated based on the relationship between the prompt and the color. If the prompt does not have anything related to color, it might be disregarded. The image below was generated with the prompt `sea, autumn forest, girl` and color corrections to blue on the left and red on the right. `sea` responds to the blue noise, and `autumn forest` to the red noise, thus resulting in the image below. Think of it as a correction to enhance the responsiveness of the prompt.
 ![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/csample3.png)
 
 ### Specification in the Prompt
@@ -201,7 +201,7 @@ Color Mapタブで操作します。
 色の補正を行うステップ数をと、補正の強さを指定します。基本はStep 1～3,Strength 1ですが、ステップ数を長くして(10)Strengthを小さくする(0.5)運用も可能です。
 
 ### 補正の影響について
-この補正では入りを指定していますが、その領域がその色になるわけではありません。ノイズの色を変えていますが、プロンプトと色の関係から画像が生成されるので、プロンプトに色に関係のあるものがないと無視されることがあります。以下の画像は`sea, autumn, girl`というプロンプトと、左右に青と赤を補正して生成した画像です。`sea`は青いノイズに反応し、`autumn`は赤いノイズに反応するので以下のような画像が生成されます。あくまでプロンプトの反応をよくする補正だと考えてください。
+この補正では色を指定していますが、その領域がその色になるわけではありません。ノイズの色を変えていますが、プロンプトと色の関係から画像が生成されるので、プロンプトに色に関係のあるものがないと無視されることがあります。以下の画像は`sea, autumn forest, girl`というプロンプトと、左右に青と赤を補正して生成した画像です。`sea`は青いノイズに反応し、`autumn forest`は赤いノイズに反応するので以下のような画像が生成されます。あくまでプロンプトの反応をよくする補正だと考えてください。
 ![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/csample3.png)
 
 ### prompt中の指定
