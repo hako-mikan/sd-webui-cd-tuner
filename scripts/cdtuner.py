@@ -95,7 +95,7 @@ class Script(modules.scripts.Script):
                         att = gr.Slider(label="Strength", minimum=0, maximum=2, value=1, step=0.1)
                     
                     with gr.Column():
-                        areasimg = gr.Image(type="pil", show_label  = False).style(height=256,width=256)
+                        areasimg = gr.Image(type="pil", show_label = False, height = 256, width = 256)
                     
                     dtrue =  gr.Checkbox(value = True, visible = False)                
                     dfalse =  gr.Checkbox(value = False,visible = False)     
