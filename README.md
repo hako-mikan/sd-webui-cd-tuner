@@ -3,7 +3,11 @@ Color/Detail control for Stable Diffusion web-ui/色調や書き込み量を調�
 
 [日本語](#使い方)
 
-Update 2023.08.19.0200 (JST)
+Update 2023.10.18.1930(JST)
+- supprot refiner/change model in steps
+- refinerやモデルの途中変更に対応
+
+Update 2023.08.19.0200(JST)
 - add new feature:[Direct Color Control](#direct-color-control)
 - 新機能：[色補正](#色補正)
 
