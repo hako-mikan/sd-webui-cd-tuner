@@ -11,29 +11,18 @@ from modules.script_callbacks import CFGDenoiserParams, on_cfg_denoiser,CFGDenoi
 
 debug = False
 
-
-class ToolButton(gr.Button, gr.components.FormComponent):
-    """Small button with single emoji as text, fits inside gradio forms"""
-
-    def __init__(self, **kwargs):
-        super().__init__(variant="tool",
-                         elem_classes=kwargs.pop('elem_classes', []),
-                         **kwargs)
-
-    def get_block_name(self):
-        return "button"
-
-
 class Script(modules.scripts.Script):   
     def __init__(self):
+        #Color/Detail
         self.active = False
         self.storedweights = {}
         self.shape = None
         self.done = [False,False]
-        self.hr = 0
+        self.pas = 0
         self.colored = 0
         self.randman = None
 
+        #Color map
         self.activec = False
         self.ocells = []
         self.icells = []
@@ -50,8 +39,6 @@ class Script(modules.scripts.Script):
     paste_field_names = []
 
     def ui(self, is_img2img):      
-        resetsymbol = '\U0001F5D1\U0000FE0F'
-
         with gr.Accordion("CD Tuner", open=False):
             disable = gr.Checkbox(value=False, label="Disable",interactive=True,elem_id="cdt-disable")
             with gr.Tab("Color/Detail"):
@@ -59,40 +46,40 @@ class Script(modules.scripts.Script):
                     with gr.Column():
                         with gr.Row():
                             d1 = gr.Slider(label="Detail(d1)", minimum=-10, maximum=10, value=0.0, step=0.1)
-                            refresh_d1 = ToolButton(value=resetsymbol)
+                            refresh_d1 = gr.Button(value='\U0001f504', elem_classes=["tool"])
                         with gr.Row():
                             d2 = gr.Slider(label="Detail 2(d2)", minimum=-10, maximum=10, value=0.0, step=0.1,visible = True)
-                            refresh_d2 = ToolButton(value=resetsymbol)
+                            refresh_d2 = gr.Button(value='\U0001f504', elem_classes=["tool"])
                     with gr.Column():
                         with gr.Row():
                             hd1 = gr.Slider(label="hr-Detail(hd1)", minimum=-10, maximum=10, value=0.0, step=0.1)
-                            refresh_hd1 = ToolButton(value=resetsymbol)
+                            refresh_hd1 = gr.Button(value='\U0001f504', elem_classes=["tool"])
                         with gr.Row():
                             hd2 = gr.Slider(label="hr-Detail 2(hd2)", minimum=-10, maximum=10, value=0.0, step=0.1,visible = True)
-                            refresh_hd2 = ToolButton(value=resetsymbol)
+                            refresh_hd2 = gr.Button(value='\U0001f504', elem_classes=["tool"])
                 with gr.Row():
                     pass
                 with gr.Row():
                     with gr.Column():
                         with gr.Row():
                             cont1 = gr.Slider(label="Contrast(con1)", minimum=-20, maximum=20, value=0.0, step=0.1)
-                            refresh_cont1 = ToolButton(value=resetsymbol)
+                            refresh_cont1 = gr.Button(value='\U0001f504', elem_classes=["tool"])
                         with gr.Row():
                             cont2 = gr.Slider(label="Contrast 2(con2)", minimum=-20, maximum=20, value=0.0, step=0.1)
-                            refresh_cont2 = ToolButton(value=resetsymbol)
+                            refresh_cont2 = gr.Button(value='\U0001f504', elem_classes=["tool"])
                         with gr.Row():
                             bri = gr.Slider(label="Brightness(bri)", minimum=-20, maximum=20, value=0.0, step=0.1)
-                            refresh_bri = ToolButton(value=resetsymbol)
+                            refresh_bri = gr.Button(value='\U0001f504', elem_classes=["tool"])
                     with gr.Column():
                         with gr.Row():
                             col1 = gr.Slider(label="Cyan-Red(col1)", minimum=-20, maximum=20, value=0.0, step=0.1)
-                            refresh_col1 = ToolButton(value=resetsymbol)
+                            refresh_col1 = gr.Button(value='\U0001f504', elem_classes=["tool"])
                         with gr.Row():
                             col2 = gr.Slider(label="Magenta-Green(col2)", minimum=-20, maximum=20, value=0.0, step=0.1)
-                            refresh_col2 = ToolButton(value=resetsymbol)
+                            refresh_col2 = gr.Button(value='\U0001f504', elem_classes=["tool"])
                         with gr.Row():
                             col3 = gr.Slider(label="Yellow-Blue(col3)", minimum=-20, maximum=20, value=0.0, step=0.1)
-                            refresh_col3 = ToolButton(value=resetsymbol)
+                            refresh_col3 = gr.Button(value='\U0001f504', elem_classes=["tool"])
 
                     scaling = gr.Checkbox(value=False, label="hr-scaling(hrs)",interactive=True,elem_id="cdt-hr-scaling")
                     stop = gr.Slider(label="Stop Step", minimum=-1, maximum=20, value=-1, step=1)
@@ -138,16 +125,16 @@ class Script(modules.scripts.Script):
                 if debug : print(text)
                 return [gr.update(value = x) for x in text]
 
-            refresh_d1.click(fn=lambda x:gr.update(value = 0),outputs=[d1], show_progress=False)
-            refresh_d2.click(fn=lambda x:gr.update(value = 0),outputs=[d2], show_progress=False)
-            refresh_hd1.click(fn=lambda x:gr.update(value = 0),outputs=[hd1], show_progress=False)
-            refresh_hd2.click(fn=lambda x:gr.update(value = 0),outputs=[hd2], show_progress=False)
-            refresh_cont1.click(fn=lambda x:gr.update(value = 0),outputs=[cont1], show_progress=False)
-            refresh_cont2.click(fn=lambda x:gr.update(value = 0),outputs=[cont2], show_progress=False)
-            refresh_col1.click(fn=lambda x:gr.update(value = 0),outputs=[col1], show_progress=False)
-            refresh_col2.click(fn=lambda x:gr.update(value = 0),outputs=[col2], show_progress=False)
-            refresh_col3.click(fn=lambda x:gr.update(value = 0),outputs=[col3], show_progress=False)
-            refresh_bri.click(fn=lambda x:gr.update(value = 0),outputs=[bri], show_progress=False)
+            refresh_d1.click(fn=lambda x:gr.update(value = 0),outputs=[d1])
+            refresh_d2.click(fn=lambda x:gr.update(value = 0),outputs=[d2])
+            refresh_hd1.click(fn=lambda x:gr.update(value = 0),outputs=[hd1])
+            refresh_hd2.click(fn=lambda x:gr.update(value = 0),outputs=[hd2])
+            refresh_cont1.click(fn=lambda x:gr.update(value = 0),outputs=[cont1])
+            refresh_cont2.click(fn=lambda x:gr.update(value = 0),outputs=[cont2])
+            refresh_col1.click(fn=lambda x:gr.update(value = 0),outputs=[col1])
+            refresh_col2.click(fn=lambda x:gr.update(value = 0),outputs=[col2])
+            refresh_col3.click(fn=lambda x:gr.update(value = 0),outputs=[col3])
+            refresh_bri.click(fn=lambda x:gr.update(value = 0),outputs=[bri])
 
             params = [d1,d2,cont1,cont2,bri,col1,col2,col3,hd1,hd2,scaling,stop,stoph,disable]
             paramsc = [ratios,cmode,colors,fst,att]
@@ -173,11 +160,11 @@ class Script(modules.scripts.Script):
 
         self.__init__()
 
-        psets, psets_c = fromprompts(p.all_prompts[0:1])
-
         if disable:
             return
-            
+
+        psets, psets_c = fromprompts(p.all_prompts[0:1])
+
         for i, param in enumerate(psets):
             if param is not None:
                 allsets[i] = param
@@ -188,12 +175,14 @@ class Script(modules.scripts.Script):
                 if param == "V" :param ="Vertical"
                 allsets_c[i] = param
 
-        ratios,cmode,colors,fst,att = allsets_c
+        ratios, cmode, colors, fst, att = allsets_c
 
         if debug: print("\n",allsets)
         if debug: print("\n",allsets_c)
 
         self.isxl = hasattr(shared.sd_model,"conditioner")
+
+        self.isrefiner = getattr(p, "refiner_switch_at") is not None
 
         if any(not(type(x) == float or type(x) == int) for x in allsets):return
         if all(x == 0 for x in allsets[:-3]) and all(x == "" for x in [ratios,cmode,colors]):return
@@ -206,9 +195,9 @@ class Script(modules.scripts.Script):
                 self.scaling = allsets[10]
                 self.sts = allsets[11:]
                 if hasattr(p,"enable_hr"): # Img2img doesn't have it.
-                    self.ehr = p.enable_hr
+                    self.hr = p.enable_hr
                 else:
-                    self.ehr = False
+                    self.hr = False
 
                 p.extra_generation_params.update({"CDT":",".join([str(x) for x in allsets[:-1]])})
 
@@ -239,6 +228,8 @@ class Script(modules.scripts.Script):
 
                 p.extra_generation_params.update({"CDTC":"_".join([str(x) for x in allsets_c])})
 
+        print(f"\nCD Tuner Effective : {allsets}")
+
         if not hasattr(self,"cdt_dr_callbacks"):
             self.cdt_dr_callbacks = on_cfg_denoiser(self.denoiser_callback)
 
@@ -256,13 +247,13 @@ class Script(modules.scripts.Script):
             if self.shape is None:self.shape = params.x.shape
             if params.x.shape[2] * params.x.shape[3] > self.shape[2]*self.shape[3]:
                 self.colored = 0
-                self.hr = 1
+                self.pas = 1
             if self.colored == params.sampling_step and self.colored < self.fst:
                 c = 0
                 scale = torch.mean(torch.abs(params.x[:,:,:,:]))
                 h,w = params.x.shape[2], params.x.shape[3]
                 enhance = 6
-                hr_att = 0.25 if self.hr else 1
+                hr_att = 0.25 if self.pas else 1
                 for i,ocell in enumerate(self.ocells):
                     for icell in self.icells[i]:
                         if "Ver" in self.cmode:
@@ -285,30 +276,31 @@ class Script(modules.scripts.Script):
         if self.active:
             if self.shape is None:self.shape = params.x.shape
             if params.x.shape[2] * params.x.shape[3] > self.shape[2]*self.shape[3]:
-                self.hr = hr = 1
+                self.pas = 1
                 scale = ((params.x.shape[2] * params.x.shape[3]) / (self.shape[2]*self.shape[3])) if self.scaling else 1
             else: 
-                hr = 0
                 scale = 1
 
             ratios = self.drratios
 
-            if stopper(self,params.sampling_step,self.hr) : return
+            if stopper(self,self.pas,params.sampling_step): return
 
-            if self.done[self.hr]:return
-            else: self.done[hr] = True
+            #dont operate twice
+            if self.done[self.pas] and not self.isrefiner:
+                return
+            else:
+                self.done[self.pas] = True
 
-            if hr:
+            if self.pas:
                 if ratios[-2] : ratios[0] = ratios[-2]
                 if ratios[-1] : ratios[1] = ratios[-1]
 
             ratios[:2] = [x * scale for x in ratios[:2]]
             ratios = fineman(ratios)
 
-            print(f"\nCD Tuner Effective : {ratios},in Hires-fix:{hr == 1}")
-
             for i,name in enumerate(ADJUSTS):
-                if name not in self.storedweights.keys(): self.storedweights[name] = getset_nested_module_tensor(True, shared.sd_model, name).clone()
+                if name not in self.storedweights.keys() or self.isrefiner:
+                    self.storedweights[name] = getset_nested_module_tensor(True, shared.sd_model, name).clone()
                 if 4 > i:
                     new_weight = self.storedweights[name].to(devices.device) * ratios[i]
                 else:
@@ -319,7 +311,9 @@ class Script(modules.scripts.Script):
 
     def denoised_callback(self, params: CFGDenoisedParams):
         if self.active:
-            if self.ehr and not self.hr: return
+            if self.isrefiner:
+                restoremodel(self)
+            if self.hr and not self.pas: return
             if params.sampling_step == params.total_sampling_steps-2 -self.sts[2]: 
                 if any(x != 0 for x in self.ddratios):
                     ratios = [self.ddratios[0] * 0.02] +  colorcalc(self.ddratios[1:],self.isxl)
@@ -328,14 +322,14 @@ class Script(modules.scripts.Script):
                         params.x[:,i,:,:] = params.x[:,i,:,:] - x * 20/3
 
 
-def stopper(self,step,hr):
+def stopper(self,pas,step):
     judge = False
-    if 0 > self.sts[hr]: return False 
-    if step >= self.sts[hr]:
+    if 0 > self.sts[pas]: return False 
+    if step >= self.sts[pas]:
         judge = True
-    if judge and self.done[hr]:
+    if judge and self.done[pas]:
         restoremodel(self)
-        self.done[hr] = False
+        self.done[pas] = False
     return judge
 
 
@@ -429,7 +423,6 @@ def makecells(aratio,mode,in_ui):
     h = w = 128
     icells = []
     ocells = []
-    colors = []
 
     def startend(lst):
         o = []
