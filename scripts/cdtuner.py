@@ -250,7 +250,9 @@ class Script(modules.scripts.Script):
             self.cdt_dd_callbacks = on_cfg_denoised(self.denoised_callback)
 
     def postprocess_batch(self, p, *args,**kwargs):
-        if True in self.done: restoremodel(self)
+        if True in self.done: 
+            restoremodel_l(shared.sd_model)
+            restoremodel(self)
         self.done = [False,False]
 
     def denoiser_callback(self, params: CFGDenoiserParams):
@@ -287,6 +289,7 @@ class Script(modules.scripts.Script):
                 self.colored += 1
 
         if self.active:
+            if debug: print(self.drratios)
             if self.shape is None:self.shape = params.x.shape
             if params.x.shape[2] * params.x.shape[3] > self.shape[2]*self.shape[3]:
                 self.pas = 1
@@ -310,7 +313,7 @@ class Script(modules.scripts.Script):
 
             ratios[:2] = [x * scale for x in ratios[:2]]
             ratios = fineman(ratios)
-
+            if debug: print(ratios)
             for i,name in enumerate(ADJUSTS):
                 if name not in self.storedweights.keys() or self.isrefiner:
                     self.storedweights[name] = getset_nested_module_tensor(True, shared.sd_model, name).clone()
@@ -325,6 +328,7 @@ class Script(modules.scripts.Script):
     def denoised_callback(self, params: CFGDenoisedParams):
         if self.active:
             if self.isrefiner:
+                restoremodel_l(shared.sd_model)
                 restoremodel(self)
             if self.hr and not self.pas: return
             if params.sampling_step == params.total_sampling_steps-2 -self.sts[2]: 
@@ -341,6 +345,7 @@ def stopper(self,pas,step):
     if step >= self.sts[pas]:
         judge = True
     if judge and self.done[pas]:
+        restoremodel_l(shared.sd_model)
         restoremodel(self)
         self.done[pas] = False
     return judge
@@ -498,9 +503,38 @@ ADJUSTS =[
 "model.diffusion_model.out.2.bias",
 ]
 
+NAMES =[
+"model.diffusion_model.input_blocks.0.0",
+"model.diffusion_model.out.0",
+"model.diffusion_model.out.2",
+]
+
 IDENTIFIER = ["d1","d2","con1","con2","bri","col1","col2","col3","hd1","hd2","hrs","st1","st2","st3","dis"]
 IDENTIFIER_C = ["sp","md","cols","stc","str"]
 
 
 COLS = [[-1,1/3,2/3],[1,1,0],[0,-1,-1],[1,0,1]]
 COLSXL = [[0,0,1],[1,0,0],[-1,-1,0],[-1,1,0]]
+
+def restoremodel_l(model):
+    for name, module in model.named_modules():
+        if name not in NAMES: continue
+        if hasattr(module, "network_weights_backup"):
+            if module.network_weights_backup is not None:
+                if isinstance(module, torch.nn.MultiheadAttention):
+                    module.in_proj_weight.copy_(module.network_weights_backup[0])
+                    module.out_proj.weight.copy_(module.network_weights_backup[1])
+                else:
+                    module.weight.copy_(module.network_weights_backup)
+                del module.network_weights_backup
+                if hasattr(module, "network_current_names"): del module.network_current_names
+
+        if hasattr(module, "network_bias_backup"):
+            if module.network_bias_backup is not None:
+                if isinstance(module, torch.nn.MultiheadAttention):
+                    module.in_proj_bias.copy_(module.network_bias_backup[0])
+                    module.out_proj.bias.copy_(module.network_bias_backup[1])
+                else:
+                    module.bias.copy_(module.network_bias_backup)
+                del module.network_bias_backup
+                if hasattr(module, "network_current_names"): del module.network_current_names
