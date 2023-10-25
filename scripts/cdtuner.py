@@ -11,6 +11,17 @@ from modules.script_callbacks import CFGDenoiserParams, on_cfg_denoiser,CFGDenoi
 
 debug = False
 
+class ToolButton(gr.Button, gr.components.FormComponent):
+    """Small button with single emoji as text, fits inside gradio forms"""
+
+    def __init__(self, **kwargs):
+        super().__init__(variant="tool",
+                         elem_classes=kwargs.pop('elem_classes', []),
+                         **kwargs)
+
+    def get_block_name(self):
+        return "button"
+
 class Script(modules.scripts.Script):   
     def __init__(self):
         #Color/Detail
@@ -39,6 +50,8 @@ class Script(modules.scripts.Script):
     paste_field_names = []
 
     def ui(self, is_img2img):      
+        resetsymbol = '\U0001F5D1\U0000FE0F'
+
         with gr.Accordion("CD Tuner", open=False):
             disable = gr.Checkbox(value=False, label="Disable",interactive=True,elem_id="cdt-disable")
             with gr.Tab("Color/Detail"):
@@ -46,40 +59,40 @@ class Script(modules.scripts.Script):
                     with gr.Column():
                         with gr.Row():
                             d1 = gr.Slider(label="Detail(d1)", minimum=-10, maximum=10, value=0.0, step=0.1)
-                            refresh_d1 = gr.Button(value='\U0001f504', elem_classes=["tool"])
+                            refresh_d1 = ToolButton(value=resetsymbol)
                         with gr.Row():
                             d2 = gr.Slider(label="Detail 2(d2)", minimum=-10, maximum=10, value=0.0, step=0.1,visible = True)
-                            refresh_d2 = gr.Button(value='\U0001f504', elem_classes=["tool"])
+                            refresh_d2 = ToolButton(value=resetsymbol)
                     with gr.Column():
                         with gr.Row():
                             hd1 = gr.Slider(label="hr-Detail(hd1)", minimum=-10, maximum=10, value=0.0, step=0.1)
-                            refresh_hd1 = gr.Button(value='\U0001f504', elem_classes=["tool"])
+                            refresh_hd1 = ToolButton(value=resetsymbol)
                         with gr.Row():
                             hd2 = gr.Slider(label="hr-Detail 2(hd2)", minimum=-10, maximum=10, value=0.0, step=0.1,visible = True)
-                            refresh_hd2 = gr.Button(value='\U0001f504', elem_classes=["tool"])
+                            refresh_hd2 = ToolButton(value=resetsymbol)
                 with gr.Row():
                     pass
                 with gr.Row():
                     with gr.Column():
                         with gr.Row():
                             cont1 = gr.Slider(label="Contrast(con1)", minimum=-20, maximum=20, value=0.0, step=0.1)
-                            refresh_cont1 = gr.Button(value='\U0001f504', elem_classes=["tool"])
+                            refresh_cont1 = ToolButton(value=resetsymbol)
                         with gr.Row():
                             cont2 = gr.Slider(label="Contrast 2(con2)", minimum=-20, maximum=20, value=0.0, step=0.1)
-                            refresh_cont2 = gr.Button(value='\U0001f504', elem_classes=["tool"])
+                            refresh_cont2 = ToolButton(value=resetsymbol)
                         with gr.Row():
                             bri = gr.Slider(label="Brightness(bri)", minimum=-20, maximum=20, value=0.0, step=0.1)
-                            refresh_bri = gr.Button(value='\U0001f504', elem_classes=["tool"])
+                            refresh_bri = ToolButton(value=resetsymbol)
                     with gr.Column():
                         with gr.Row():
                             col1 = gr.Slider(label="Cyan-Red(col1)", minimum=-20, maximum=20, value=0.0, step=0.1)
-                            refresh_col1 = gr.Button(value='\U0001f504', elem_classes=["tool"])
+                            refresh_col1 = ToolButton(value=resetsymbol)
                         with gr.Row():
                             col2 = gr.Slider(label="Magenta-Green(col2)", minimum=-20, maximum=20, value=0.0, step=0.1)
-                            refresh_col2 = gr.Button(value='\U0001f504', elem_classes=["tool"])
+                            refresh_col2 = ToolButton(value=resetsymbol)
                         with gr.Row():
                             col3 = gr.Slider(label="Yellow-Blue(col3)", minimum=-20, maximum=20, value=0.0, step=0.1)
-                            refresh_col3 = gr.Button(value='\U0001f504', elem_classes=["tool"])
+                            refresh_col3 = ToolButton(value=resetsymbol)
 
                     scaling = gr.Checkbox(value=False, label="hr-scaling(hrs)",interactive=True,elem_id="cdt-hr-scaling")
                     stop = gr.Slider(label="Stop Step", minimum=-1, maximum=20, value=-1, step=1)
@@ -125,16 +138,16 @@ class Script(modules.scripts.Script):
                 if debug : print(text)
                 return [gr.update(value = x) for x in text]
 
-            refresh_d1.click(fn=lambda x:gr.update(value = 0),outputs=[d1])
-            refresh_d2.click(fn=lambda x:gr.update(value = 0),outputs=[d2])
-            refresh_hd1.click(fn=lambda x:gr.update(value = 0),outputs=[hd1])
-            refresh_hd2.click(fn=lambda x:gr.update(value = 0),outputs=[hd2])
-            refresh_cont1.click(fn=lambda x:gr.update(value = 0),outputs=[cont1])
-            refresh_cont2.click(fn=lambda x:gr.update(value = 0),outputs=[cont2])
-            refresh_col1.click(fn=lambda x:gr.update(value = 0),outputs=[col1])
-            refresh_col2.click(fn=lambda x:gr.update(value = 0),outputs=[col2])
-            refresh_col3.click(fn=lambda x:gr.update(value = 0),outputs=[col3])
-            refresh_bri.click(fn=lambda x:gr.update(value = 0),outputs=[bri])
+            refresh_d1.click(fn=lambda x:gr.update(value = 0),outputs=[d1], show_progress=False)
+            refresh_d2.click(fn=lambda x:gr.update(value = 0),outputs=[d2], show_progress=False)
+            refresh_hd1.click(fn=lambda x:gr.update(value = 0),outputs=[hd1], show_progress=False)
+            refresh_hd2.click(fn=lambda x:gr.update(value = 0),outputs=[hd2], show_progress=False)
+            refresh_cont1.click(fn=lambda x:gr.update(value = 0),outputs=[cont1], show_progress=False)
+            refresh_cont2.click(fn=lambda x:gr.update(value = 0),outputs=[cont2], show_progress=False)
+            refresh_col1.click(fn=lambda x:gr.update(value = 0),outputs=[col1], show_progress=False)
+            refresh_col2.click(fn=lambda x:gr.update(value = 0),outputs=[col2], show_progress=False)
+            refresh_col3.click(fn=lambda x:gr.update(value = 0),outputs=[col3], show_progress=False)
+            refresh_bri.click(fn=lambda x:gr.update(value = 0),outputs=[bri], show_progress=False)
 
             params = [d1,d2,cont1,cont2,bri,col1,col2,col3,hd1,hd2,scaling,stop,stoph,disable]
             paramsc = [ratios,cmode,colors,fst,att]
