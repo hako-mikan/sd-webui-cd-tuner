@@ -1,7 +1,9 @@
 import gradio as gr
 import torch
+import os
 import numpy as np
 import PIL
+import json
 import random
 from torch.nn import Parameter
 import modules.ui
@@ -10,6 +12,22 @@ from modules import devices, shared, extra_networks
 from modules.script_callbacks import CFGDenoiserParams, on_cfg_denoiser,CFGDenoisedParams, on_cfg_denoised
 
 debug = False
+
+CD_T = "customscript/cdtuner.py/txt2img/Active/value"
+CD_I = "customscript/cdtuner.py/img2img/Active/value"
+CONFIG = shared.cmd_opts.ui_config_file
+
+if os.path.exists(CONFIG):
+    with open(CONFIG, 'r') as json_file:
+        ui_config = json.load(json_file)
+else:
+    print("ui config file not found, using default values")
+    ui_config = {}
+
+startup_t = ui_config[CD_T] if CD_T in ui_config else None
+startup_i = ui_config[CD_I] if CD_I in ui_config else None
+active_t = "Active" if startup_t else "Not Active"
+active_i = "Active" if startup_i else "Not Active"
 
 class ToolButton(gr.Button, gr.components.FormComponent):
     """Small button with single emoji as text, fits inside gradio forms"""
@@ -52,8 +70,10 @@ class Script(modules.scripts.Script):
     def ui(self, is_img2img):      
         resetsymbol = '\U0001F5D1\U0000FE0F'
 
-        with gr.Accordion("CD Tuner", open=False):
-            disable = gr.Checkbox(value=False, label="Disable",interactive=True,elem_id="cdt-disable")
+        with gr.Accordion(f"CD Tuner : {active_i if is_img2img else active_t}",open = False) as acc:
+            with gr.Row():
+                active = gr.Checkbox(value=True, label="Active",interactive=True,elem_id="cdt-active")
+                toggle = gr.Button(value=f"Toggle startup with Active(Now:{startup_i if is_img2img else startup_t})")
             with gr.Tab("Color/Detail"):
                 with gr.Row():
                     with gr.Column():
@@ -108,6 +128,9 @@ class Script(modules.scripts.Script):
                         colors = gr.Textbox(label="colors",interactive=True,visible=True)
                         fst = gr.Slider(label="Mapping Stop Step", minimum=0, maximum=150, value=2, step=1)
                         att = gr.Slider(label="Strength", minimum=0, maximum=2, value=1, step=0.1)
+                        presets = gr.Dropdown(label="add from presets", choices=list(COLORPRESET.keys()))
+                    
+                    presets.change(fn=lambda x, y:COLORPRESET[y] if x == "" else x + ";"+ COLORPRESET[y], inputs =[colors,presets], outputs=[colors])
                     
                     with gr.Column():
                         areasimg = gr.Image(type="pil", show_label = False, height = 256, width = 256)
@@ -127,7 +150,7 @@ class Script(modules.scripts.Script):
                     outs = [float(x) for x in text[:10]] + [text[10] == "1"] + [float(x) for x in text[11:]] 
                 else:
                     outs = [0] * 10 + [False] + [-1] *2
-                outs = outs + [False]
+                outs = [True] + outs
                 return [gr.update(value = x) for x in outs]
 
             def infotexter_c(text):
@@ -149,7 +172,7 @@ class Script(modules.scripts.Script):
             refresh_col3.click(fn=lambda x:gr.update(value = 0),outputs=[col3], show_progress=False)
             refresh_bri.click(fn=lambda x:gr.update(value = 0),outputs=[bri], show_progress=False)
 
-            params = [d1,d2,cont1,cont2,bri,col1,col2,col3,hd1,hd2,scaling,stop,stoph,disable]
+            params = [active,d1,d2,cont1,cont2,bri,col1,col2,col3,hd1,hd2,scaling,stop,stoph]
             paramsc = [ratios,cmode,colors,fst,att]
 
             allsets = gr.Textbox(visible = False)
@@ -158,13 +181,29 @@ class Script(modules.scripts.Script):
             allsets_c = gr.Textbox(visible = False)
             allsets_c.change(fn=infotexter_c,inputs = [allsets_c], outputs =paramsc)
 
+            def f_toggle(is_img2img):
+                key = CD_I if is_img2img else CD_T
+
+                with open(CONFIG, 'r') as json_file:
+                    data = json.load(json_file)
+                data[key] = not data[key]
+
+                with open(CONFIG, 'w') as json_file:
+                    json.dump(data, json_file, indent=4) 
+
+                return gr.update(value = f"Toggle startup Active(Now:{data[key]})")
+
+            toggle.click(fn=f_toggle,inputs=[gr.Checkbox(value = is_img2img, visible = False)],outputs=[toggle])
+            active.change(fn=lambda x:gr.update(label = f"CD Tuner : {'Active' if x else 'Not Active'}"),inputs=active, outputs=[acc])
+
+
         self.infotext_fields = ([(allsets,"CDT"),(allsets_c,"CDTC")])
         self.paste_field_names.append("CDT")
         self.paste_field_names.append("CDTC")
 
         return params + paramsc
 
-    def process_batch(self, p, d1,d2,cont1,cont2,bri,col1,col2,col3,hd1,hd2,scaling,stop,stoph,disable,ratios,cmode,colors,fst,att,**kwargs):
+    def process_batch(self, p, active, d1,d2,cont1,cont2,bri,col1,col2,col3,hd1,hd2,scaling,stop,stoph,ratios,cmode,colors,fst,att,**kwargs):
         if (self.done[0] or self.done[1]) and self.storedweights and self.storedname == shared.opts.sd_model_checkpoint:
             restoremodel(self)
 
@@ -173,7 +212,7 @@ class Script(modules.scripts.Script):
 
         self.__init__()
 
-        if disable:
+        if not active:
             return
 
         psets, psets_c = fromprompts(p.all_prompts[0:1])
@@ -198,9 +237,9 @@ class Script(modules.scripts.Script):
         self.isrefiner = getattr(p, "refiner_switch_at") is not None
 
         if any(not(type(x) == float or type(x) == int) for x in allsets):return
-        if all(x == 0 for x in allsets[:-3]) and all(x == "" for x in [ratios,cmode,colors]):return
+        if all(x == 0 for x in allsets[:10]) and att == 0:return
         else:
-            if not all(x == 0 for x in allsets[:-3]):
+            if not all(x == 0 for x in allsets[:10]):
                 if debug:print("Start")
                 self.active = True
                 self.drratios = allsets[0:3]+allsets[8:10]
@@ -538,3 +577,30 @@ def restoremodel_l(model):
                     module.bias.copy_(module.network_bias_backup)
                 del module.network_bias_backup
                 if hasattr(module, "network_current_names"): del module.network_current_names
+
+
+COLORPRESET = {
+    "Cyan": "-5, 0, 0",
+    "Magenda": "0, -5, 0",
+    "Yellow": "0, 0, -5",
+    "Red": "5, -5, -5",
+    "Green": "0, 5, 0",
+    "Blue": "0, 0, 5",
+    "VeryLightBlue": "-5, -5, 0",
+    "YellowGreen": "-5, 0, -5",
+    "Orange": "0, -5, -5",
+    "Malachite": "-5, 5, 0",
+    "BrightCyan": "-5, 0, 5",
+    "VioretPink": "0, -5, 5",
+    "DeepPink": "5, -5, 0",
+    "GuardsmanRed": "5, 0, -5",
+    "DeepGreen": "0, 5, -5",
+    "Black": "5, 5, 0",
+    "BrightNeonPink": "5, 0, 5",
+    "NeonBlue": "0, 5, 5",
+    "GreenYellow": "-5, -5, -5",
+    "LightBlue": "-5, -5, 5",
+    "LimeGreen": "-5, 5, -5",
+    "DeepBrown": "5, 5, -5",
+    "VioletBlue": "5, 5, 5"
+}
