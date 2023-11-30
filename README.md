@@ -1,7 +1,11 @@
 # CD(Color/Detail) Tuner
-Color/Detail control for Stable Diffusion web-ui/色調や書き込み量を調節するweb-ui拡張です。
+- Color/Detail control for Stable Diffusion web-ui  
+- 色調や書き込み量を調節するweb-ui拡張です。
 
-[日本語](#使い方)
+[<img src="https://img.shields.io/badge/lang-Egnlish-red.svg?style=plastic" height="25" />](#usage)
+[<img src="https://img.shields.io/badge/言語-日本語-green.svg?style=plastic" height="25" />](#使い方)
+[<img src="https://img.shields.io/badge/Support-%E2%99%A5-magenta.svg?logo=github&style=plastic" height="25" />](https://github.com/sponsors/hako-mikan)
+
 
 Update 2023.10.18.1930(JST)
 - supprot refiner/change model in steps
