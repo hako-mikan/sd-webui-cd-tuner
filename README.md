@@ -2,9 +2,10 @@
 - Color/Detail control for Stable Diffusion web-ui  
 - 色調や書き込み量を調節するweb-ui拡張です。
 
-[<img src="https://img.shields.io/badge/lang-Egnlish-red.svg?style=plastic" height="25" />](#usage)
-[<img src="https://img.shields.io/badge/言語-日本語-green.svg?style=plastic" height="25" />](#使い方)
+[<img src="https://img.shields.io/badge/lang-Egnlish-red.svg?style=plastic" height="25" />](#overview)
+[<img src="https://img.shields.io/badge/言語-日本語-green.svg?style=plastic" height="25" />](#概要)
 [<img src="https://img.shields.io/badge/Support-%E2%99%A5-magenta.svg?logo=github&style=plastic" height="25" />](https://github.com/sponsors/hako-mikan)
+
 
 
 Update 2023.10.18.1930(JST)
@@ -21,7 +22,7 @@ Update 2023.07.13.0030(JST)
 - add disable checkbox
 
 ![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample0.png)
-
+# Overview
 This is an extension to modify the amount of detailing and color tone in the output image. It intervenes in the generation process, not on the image after it's generated. It works on a mechanism different from LoRA and is compatible with 1.X and 2.X series. In particular, it can significantly improve the quality of generated products during Hires.fix.
 
 ## Usage
@@ -123,7 +124,7 @@ Specify using "sp" (Split ratio), "by" (Split by), "cols" (colors), "stc" (Stop 
 ```
 
 
-# Color/Detail control for Stable Diffusion web-ui
+# 概要
 出力画像の描き込み量や色調を変更する拡張機能です。生成後の画像に対してではなく生成過程に介入します。LoRAとは異なる仕組みで動いています。2.X系統にも対応しています。特にHires.fix時の生成品質を大幅に向上させることができます。
 
 ## 使い方
