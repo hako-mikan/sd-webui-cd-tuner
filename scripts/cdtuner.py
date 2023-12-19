@@ -45,11 +45,13 @@ class Script(modules.scripts.Script):
         #Color/Detail
         self.active = False
         self.storedweights = {}
+        self.storedweights_vae = {}
         self.shape = None
         self.done = [False,False]
         self.pas = 0
         self.colored = 0
         self.randman = None
+        self.satuartion = 0
 
         #Color map
         self.activec = False
@@ -103,6 +105,9 @@ class Script(modules.scripts.Script):
                         with gr.Row():
                             bri = gr.Slider(label="Brightness(bri)", minimum=-20, maximum=20, value=0.0, step=0.1)
                             refresh_bri = ToolButton(value=resetsymbol)
+                        with gr.Row():
+                            sat = gr.Slider(label="saturation(sat)", minimum=-20, maximum=20, value=0.0, step=0.1)
+                            refresh_sat = ToolButton(value=resetsymbol)
                     with gr.Column():
                         with gr.Row():
                             col1 = gr.Slider(label="Cyan-Red(col1)", minimum=-20, maximum=20, value=0.0, step=0.1)
@@ -141,24 +146,29 @@ class Script(modules.scripts.Script):
                 maketemp.click(fn=makecells, inputs =[ratios,cmode,dtrue],outputs = [areasimg])
 
             def infotexter(text):
+                if text == "":return [gr.update()] * (len(params) +1)
                 if debug : print(text)
                 text = text.split(",")
                 if len(text) == 9:
                     outs = [float(x) for x in text[0:3]] +[0] * 2 + [float(x) for x in text[3:8]] + [text[-1] == "1"] + [-1] *2
                     outs.insert(3,0)
                 elif len(text) == 13:
+                    outs = [float(x) for x in text[:10]] + [text[10] == "1"] + [float(x) for x in text[11:]] + [0]
+                elif len(text) == 14:
                     outs = [float(x) for x in text[:10]] + [text[10] == "1"] + [float(x) for x in text[11:]] 
                 else:
-                    outs = [0] * 10 + [False] + [-1] *2
-                outs = [True] + outs
+                    outs = [0] * 10 + [False] + [-1] *2 + [0]
+                outs = [""] + [True] + outs
                 return [gr.update(value = x) for x in outs]
 
             def infotexter_c(text):
+                if text == "":return [gr.update()] * (len(paramsc) +1)
                 if debug : print(text)
                 text = text.split("_")
                 if len(text) != 5:
                     text = ["","Horizonal","",2,0.2]
                 if debug : print(text)
+                text = [""] + text
                 return [gr.update(value = x) for x in text]
 
             refresh_d1.click(fn=lambda x:gr.update(value = 0),outputs=[d1], show_progress=False)
@@ -171,15 +181,16 @@ class Script(modules.scripts.Script):
             refresh_col2.click(fn=lambda x:gr.update(value = 0),outputs=[col2], show_progress=False)
             refresh_col3.click(fn=lambda x:gr.update(value = 0),outputs=[col3], show_progress=False)
             refresh_bri.click(fn=lambda x:gr.update(value = 0),outputs=[bri], show_progress=False)
+            refresh_sat.click(fn=lambda x:gr.update(value = 0),outputs=[sat], show_progress=False)
 
-            params = [active,d1,d2,cont1,cont2,bri,col1,col2,col3,hd1,hd2,scaling,stop,stoph]
+            params = [active,d1,d2,cont1,cont2,bri,col1,col2,col3,hd1,hd2,scaling,stop,stoph,sat]
             paramsc = [ratios,cmode,colors,fst,att]
 
             allsets = gr.Textbox(visible = False)
-            allsets.change(fn=infotexter,inputs = [allsets], outputs =params)
+            allsets.change(fn=infotexter,inputs = [allsets], outputs =[allsets] + params)
 
             allsets_c = gr.Textbox(visible = False)
-            allsets_c.change(fn=infotexter_c,inputs = [allsets_c], outputs =paramsc)
+            allsets_c.change(fn=infotexter_c,inputs = [allsets_c], outputs =[allsets_c] +paramsc)
 
             def f_toggle(is_img2img):
                 key = CD_I if is_img2img else CD_T
@@ -203,11 +214,13 @@ class Script(modules.scripts.Script):
 
         return params + paramsc
 
-    def process_batch(self, p, active, d1,d2,cont1,cont2,bri,col1,col2,col3,hd1,hd2,scaling,stop,stoph,ratios,cmode,colors,fst,att,**kwargs):
+    def process_batch(self, p, active, d1,d2,cont1,cont2,bri,col1,col2,col3,hd1,hd2,scaling,stop,stoph,sat,ratios,cmode,colors,fst,att,**kwargs):
         if (self.done[0] or self.done[1]) and self.storedweights and self.storedname == shared.opts.sd_model_checkpoint:
             restoremodel(self)
 
-        allsets = [d1,d2,cont1,cont2,bri,col1,col2,col3,hd1,hd2,1 if scaling else 0,stop,stoph,0]
+                # ["d1","d2","con1","con2","bri","col1","col2","col3","hd1","hd2","hrs","st1","st2","dis","sat"]
+                     #0  1   2       3        4   5     6     7     8     9    10                      11    12    13 14
+        allsets = [d1,d2,cont1,cont2,bri,col1,col2,col3,hd1,hd2,1 if scaling else 0,stop,stoph,0,sat]
         allsets_c = [ratios,cmode,colors,fst,att]
 
         self.__init__()
@@ -245,13 +258,14 @@ class Script(modules.scripts.Script):
                 self.drratios = allsets[0:3]+allsets[8:10]
                 self.ddratios= allsets[3:8]
                 self.scaling = allsets[10]
-                self.sts = allsets[11:]
+                self.sts = allsets[11:14]
+                self.saturation = allsets[14]
                 if hasattr(p,"enable_hr"): # Img2img doesn't have it.
                     self.hr = p.enable_hr
                 else:
                     self.hr = False
 
-                p.extra_generation_params.update({"CDT":",".join([str(x) for x in allsets[:-1]])})
+                p.extra_generation_params.update({"CDT":",".join([str(x) for x in allsets[:-2] + [allsets[-1]]])})
 
                 self.storedname = shared.opts.sd_model_checkpoint
 
@@ -280,6 +294,9 @@ class Script(modules.scripts.Script):
 
                 p.extra_generation_params.update({"CDTC":"_".join([str(x) for x in allsets_c])})
 
+        if self.saturation != 0:
+            vaedealer(self)
+        
         print(f"\nCD Tuner Effective : {allsets}")
 
         if not hasattr(self,"cdt_dr_callbacks"):
@@ -292,6 +309,8 @@ class Script(modules.scripts.Script):
         if True in self.done: 
             restoremodel_l(shared.sd_model)
             restoremodel(self)
+        if self.saturation != 0:
+            vaeunloader(self)
         self.done = [False,False]
 
     def denoiser_callback(self, params: CFGDenoiserParams):
@@ -364,6 +383,7 @@ class Script(modules.scripts.Script):
             
             self.shape = params.x.shape
 
+
     def denoised_callback(self, params: CFGDenoisedParams):
         if self.active:
             if self.isrefiner:
@@ -377,6 +397,16 @@ class Script(modules.scripts.Script):
                     for i, x in enumerate(ratios):
                         params.x[:,i,:,:] = params.x[:,i,:,:] - x * 20/3
 
+def vaedealer(self):
+    for name in VAEKEYS:
+        if name not in self.storedweights_vae:
+            self.storedweights_vae[name] = getset_nested_module_tensor(True, shared.sd_model, name).clone()
+        new_weight = self.storedweights_vae[name].to(devices.device) * (1 + self.saturation * 0.075) 
+        getset_nested_module_tensor(False,shared.sd_model, name, new_tensor = new_weight)
+
+def vaeunloader(self):
+    for name in VAEKEYS and self.storedweights_vae:
+        getset_nested_module_tensor(False,shared.sd_model, name, new_tensor = self.storedweights_vae[name].clone().to(devices.device) )
 
 def stopper(self,pas,step):
     judge = False
@@ -445,7 +475,7 @@ def fromprompts(prompt):
                 if "=" in p:
                     p = [x.strip() for x in p.split("=")]
                     if p[0] in IDENTIFIER:
-                        if p[0] == "dis": return [0] * len(IDENTIFIER) 
+                        if p[0] == "dis": return [0] * len(IDENTIFIER), outs_c
                         outs[IDENTIFIER.index(p[0])] = float(p[1])
         else:
             params = [float(x) for x in params.split(";")]
@@ -548,7 +578,7 @@ NAMES =[
 "model.diffusion_model.out.2",
 ]
 
-IDENTIFIER = ["d1","d2","con1","con2","bri","col1","col2","col3","hd1","hd2","hrs","st1","st2","st3","dis"]
+IDENTIFIER = ["d1","d2","con1","con2","bri","col1","col2","col3","hd1","hd2","hrs","st1","st2","dis","sat"]
 IDENTIFIER_C = ["sp","md","cols","stc","str"]
 
 
@@ -604,3 +634,13 @@ COLORPRESET = {
     "DeepBrown": "5, 5, -5",
     "VioletBlue": "5, 5, 5"
 }
+
+VAEKEYS = [
+#"first_stage_model.decoder.up.3.upsample.conv.weight",
+#"first_stage_model.decoder.up.2.upsample.conv.weight",
+"first_stage_model.decoder.up.1.upsample.conv.weight",
+#"first_stage_model.decoder.up.1.block.0.nin_shortcut.weight",
+"first_stage_model.decoder.up.0.block.0.nin_shortcut.weight",
+#"first_stage_model.decoder.conv_in.weight",
+#"first_stage_model.decoder.conv_out.weight",
+]
