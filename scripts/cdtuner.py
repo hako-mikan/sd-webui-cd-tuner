@@ -51,7 +51,7 @@ class Script(modules.scripts.Script):
         self.pas = 0
         self.colored = 0
         self.randman = None
-        self.satuartion = 0
+        self.saturation = 0
 
         #Color map
         self.activec = False
@@ -250,9 +250,9 @@ class Script(modules.scripts.Script):
         self.isrefiner = getattr(p, "refiner_switch_at") is not None
 
         if any(not(type(x) == float or type(x) == int) for x in allsets):return
-        if all(x == 0 for x in allsets[:10]) and att == 0:return
+        if all(x == 0 for x in allsets[:10] + [allsets[14]]) and att == 0:return
         else:
-            if not all(x == 0 for x in allsets[:10]):
+            if not all(x == 0 for x in allsets[:10] + [allsets[14]]):
                 if debug:print("Start")
                 self.active = True
                 self.drratios = allsets[0:3]+allsets[8:10]
@@ -294,8 +294,8 @@ class Script(modules.scripts.Script):
 
                 p.extra_generation_params.update({"CDTC":"_".join([str(x) for x in allsets_c])})
 
-        if self.saturation != 0:
-            vaedealer(self)
+            if self.saturation != 0:
+                vaedealer(self)
         
         print(f"\nCD Tuner Effective : {allsets}")
 
