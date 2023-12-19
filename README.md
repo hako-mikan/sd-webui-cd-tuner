@@ -5,8 +5,9 @@
 [<img src="https://img.shields.io/badge/lang-Egnlish-red.svg?style=plastic" height="25" />](#overview)
 [<img src="https://img.shields.io/badge/言語-日本語-green.svg?style=plastic" height="25" />](#概要)
 [<img src="https://img.shields.io/badge/Support-%E2%99%A5-magenta.svg?logo=github&style=plastic" height="25" />](https://github.com/sponsors/hako-mikan)
-
-
+Update 2023.12.19.2300(JST)
+- add new parameter: saturation
+- 彩度が調節できるようになりました
 
 Update 2023.10.18.1930(JST)
 - supprot refiner/change model in steps
@@ -41,6 +42,11 @@ The difference between Contrast 1 and Contrast 2 lies in whether the adjustment 
 You can tune the color tone. For `Cyan-Red`, it becomes `Cyan` when set to negative and `Red` when set to positive.
 
 ![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample6.png)
+
+### Saturation
+You can tune the saturation.
+
+![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample9.png)
 
 ### Hr-Detail1,2 ,Hires-Scaling
 In the case of using Hires-fix, the optimal settings often differ from the usual. Basically, when using Hires-Fix, it is better to input larger values than when not using it. Hr-Detail1,2 is used when you want to set a different value from when not used during Hires-Fix generation. Hires-Scaling is a feature that automatically sets the value at the time of Hires-Fix. The value of Hires-scale squared is usually multiplied by the original value.
@@ -142,6 +148,10 @@ Specify using "sp" (Split ratio), "by" (Split by), "cols" (colors), "stc" (Stop 
 色調を補正できます。`Cyan-Red`ならマイナスにすると`Cyan`、プラスにすると`Red`になります。
 ![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample6.png)
 
+### Saturation 彩度
+彩度を補正できます。
+![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample9.png)
+
 ### Hr-Detail1,2 ,Hires-Scaling
 Hires-fixを使用する場合、最適な設定値が通常とは異なる場合が多いです。基本的にはHires-Fix使用時には未使用時より大きめの値を入れた方が良い結果が得られます。Hr-Detail1,2ではHires-Fix生成時に未使用時とは異なる値を設定したい場合に使用します。Hires-Scalingは自動的にHires-Fix使用時の値を設定する機能です。おおむねHires-scaleの2乗の値が元の値に掛けられます。
 
@@ -156,7 +166,7 @@ promptに以下の書式で入力することでpromptで値を指定できま�
 <cdt:0;0;0;-2.3;0;2;0;0;1> 
 ```
 
-使用できる識別子は`d1,d2,con1,con2,bri,col1,col2,col3,hd1,hd2,hrs,st1,st2`です。`0,0,0...`の形式で記述する場合にはこの順に書いてください。区切りはセミコロン「;」です。記入は必要なところまでで大丈夫です。`1,0,4`なら自動的に`cont`までが設定され残りは`0`になります。`hrs`は`0`以外の数値が入力されるとオンになります。
+使用できる識別子は`d1,d2,con1,con2,bri,col1,col2,col3,hd1,hd2,hrs,st1,st2,sat`です。`0,0,0...`の形式で記述する場合にはこの順に書いてください。区切りはセミコロン「;」です。記入は必要なところまでで大丈夫です。`1,0,4`なら自動的に`cont`までが設定され残りは`0`になります。`hrs`は`0`以外の数値が入力されるとオンになります。
 `0`以外の値が設定されている場合にはこちらの値が優先されます。
 このとき`Skipping unknown extra network: cdt`と表示されますが正常な動作です。
 
