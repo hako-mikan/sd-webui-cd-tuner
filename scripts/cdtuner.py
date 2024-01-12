@@ -195,11 +195,11 @@ class Script(modules.scripts.Script):
             def f_toggle(is_img2img):
                 key = CD_I if is_img2img else CD_T
 
-                with open(CONFIG, 'r') as json_file:
+                with open(CONFIG, 'r', encoding="utf-8") as json_file:
                     data = json.load(json_file)
                 data[key] = not data[key]
 
-                with open(CONFIG, 'w') as json_file:
+                with open(CONFIG, 'w', encoding="utf-8") as json_file:
                     json.dump(data, json_file, indent=4) 
 
                 return gr.update(value = f"Toggle startup Active(Now:{data[key]})")
