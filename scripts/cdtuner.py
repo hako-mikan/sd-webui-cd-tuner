@@ -378,7 +378,7 @@ class Script(modules.scripts.Script):
                 if 4 > i:
                     new_weight = self.storedweights[name].to(devices.device) * ratios[i]
                 else:
-                    new_weight = self.storedweights[name].to(devices.device) +  torch.tensor(ratios[i]).to(devices.device)
+                    new_weight = self.storedweights[name].to(devices.device) +  torch.tensor(ratios[i]).to(devices.device,devices.dtype)
                 getset_nested_module_tensor(False,shared.sd_model, name, new_tensor = new_weight)
             
             self.shape = params.x.shape
