@@ -17,6 +17,8 @@ CD_T = "customscript/cdtuner.py/txt2img/Active/value"
 CD_I = "customscript/cdtuner.py/img2img/Active/value"
 CONFIG = shared.cmd_opts.ui_config_file
 
+DEFAULTC = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 0, 0, 0]
+
 if os.path.exists(CONFIG):
     with open(CONFIG, 'r', encoding="utf-8") as json_file:
         ui_config = json.load(json_file)
@@ -46,12 +48,14 @@ class Script(modules.scripts.Script):
         self.active = False
         self.storedweights = {}
         self.storedweights_vae = {}
+        self.storedweights_vae2 = {}
         self.shape = None
         self.done = [False,False]
         self.pas = 0
         self.colored = 0
         self.randman = None
         self.saturation = 0
+        self.saturation2 = 0
 
         #Color map
         self.activec = False
@@ -118,14 +122,19 @@ class Script(modules.scripts.Script):
                         with gr.Row():
                             col3 = gr.Slider(label="Yellow-Blue(col3)", minimum=-20, maximum=20, value=0.0, step=0.1)
                             refresh_col3 = ToolButton(value=resetsymbol)
+                        with gr.Row():
+                            sat2 = gr.Slider(label="saturation2(sat2)", minimum=-20, maximum=20, value=0.0, step=0.1)
+                            refresh_sat2 = ToolButton(value=resetsymbol)
 
                     scaling = gr.Checkbox(value=False, label="hr-scaling(hrs)",interactive=True,elem_id="cdt-hr-scaling")
                     stop = gr.Slider(label="Stop Step", minimum=-1, maximum=20, value=-1, step=1)
                     stoph = gr.Slider(label="Hr-Stop Step", minimum=-1, maximum=20, value=-1, step=1)
+                with gr.Row():
+                    opts = gr.CheckboxGroup(choices=["Apply once"])
 
             with gr.Tab("Color Map"):
                 with gr.Row():
-                    cmode = gr.Radio(label="Split by", choices=["Horizonal","Vertical"], value="Horizontal", type="value", interactive=True)
+                    cmode = gr.Radio(label="Split by", choices=["Horizontal","Vertical"], value="Horizontal", type="value", interactive=True)
                     ratios = gr.Textbox(label="Split Ratio",lines=1,value="1,1",interactive=True,elem_id="Split_ratio",visible=True)
                 with gr.Row():
                     with gr.Column():
@@ -182,8 +191,9 @@ class Script(modules.scripts.Script):
             refresh_col3.click(fn=lambda x:gr.update(value = 0),outputs=[col3], show_progress=False)
             refresh_bri.click(fn=lambda x:gr.update(value = 0),outputs=[bri], show_progress=False)
             refresh_sat.click(fn=lambda x:gr.update(value = 0),outputs=[sat], show_progress=False)
+            refresh_sat2.click(fn=lambda x:gr.update(value = 0),outputs=[sat2], show_progress=False)
 
-            params = [active,d1,d2,cont1,cont2,bri,col1,col2,col3,hd1,hd2,scaling,stop,stoph,sat]
+            params = [active,d1,d2,cont1,cont2,bri,col1,col2,col3,hd1,hd2,scaling,stop,stoph,sat,sat2]
             paramsc = [ratios,cmode,colors,fst,att]
 
             allsets = gr.Textbox(visible = False)
@@ -212,16 +222,17 @@ class Script(modules.scripts.Script):
         self.paste_field_names.append("CDT")
         self.paste_field_names.append("CDTC")
 
-        return params + paramsc
+        return params + paramsc + [opts]
 
-    def process_batch(self, p, active, d1,d2,cont1,cont2,bri,col1,col2,col3,hd1,hd2,scaling,stop,stoph,sat,ratios,cmode,colors,fst,att,**kwargs):
+    def process_batch(self, p, active, d1,d2,cont1,cont2,bri,col1,col2,col3,hd1,hd2,scaling,stop,stoph,sat,sat2,ratios,cmode,colors,fst,att,opts,**kwargs):
         if (self.done[0] or self.done[1]) and self.storedweights and self.storedname == shared.opts.sd_model_checkpoint:
             restoremodel(self)
 
                 # ["d1","d2","con1","con2","bri","col1","col2","col3","hd1","hd2","hrs","st1","st2","dis","sat"]
                      #0  1   2       3        4   5     6     7     8     9    10                      11    12    13 14
-        allsets = [d1,d2,cont1,cont2,bri,col1,col2,col3,hd1,hd2,1 if scaling else 0,stop,stoph,0,sat]
+        allsets = [d1,d2,cont1,cont2,bri,col1,col2,col3,hd1,hd2,1 if scaling else 0,stop,stoph,0,sat,sat2]
         allsets_c = [ratios,cmode,colors,fst,att]
+        self.opts = opts
 
         self.__init__()
 
@@ -250,9 +261,9 @@ class Script(modules.scripts.Script):
         self.isrefiner = getattr(p, "refiner_switch_at") is not None
 
         if any(not(type(x) == float or type(x) == int) for x in allsets):return
-        if all(x == 0 for x in allsets[:10] + [allsets[14]]) and att == 0:return
+        if allsets == DEFAULTC and (att == 0 or colors == ""):return
         else:
-            if not all(x == 0 for x in allsets[:10] + [allsets[14]]):
+            if not all(x == 0 for x in allsets[:10] + allsets[14:16]):
                 if debug:print("Start")
                 self.active = True
                 self.drratios = allsets[0:3]+allsets[8:10]
@@ -260,6 +271,7 @@ class Script(modules.scripts.Script):
                 self.scaling = allsets[10]
                 self.sts = allsets[11:14]
                 self.saturation = allsets[14]
+                self.saturation2 = allsets[15]
                 if hasattr(p,"enable_hr"): # Img2img doesn't have it.
                     self.hr = p.enable_hr
                 else:
@@ -296,7 +308,10 @@ class Script(modules.scripts.Script):
 
             if self.saturation != 0:
                 vaedealer(self)
-        
+
+            if self.saturation2 != 0:
+                vaedealer2(self)
+
         print(f"\nCD Tuner Effective : {allsets}")
 
         if not hasattr(self,"cdt_dr_callbacks"):
@@ -306,12 +321,17 @@ class Script(modules.scripts.Script):
             self.cdt_dd_callbacks = on_cfg_denoised(self.denoised_callback)
 
     def postprocess_batch(self, p, *args,**kwargs):
+        print("postprocess_batch")
         if True in self.done: 
             restoremodel_l(shared.sd_model)
             restoremodel(self)
         if self.saturation != 0:
             vaeunloader(self)
+        if self.saturation2 != 0:
+            vaeunloader2(self)
         self.done = [False,False]
+        if "Apply once" in self.opts:
+            self.active = self.activec = False
 
     def denoiser_callback(self, params: CFGDenoiserParams):
         # params.x [batch,ch[4],height,width]
@@ -407,6 +427,17 @@ def vaedealer(self):
 def vaeunloader(self):
     for name in VAEKEYS and self.storedweights_vae:
         getset_nested_module_tensor(False,shared.sd_model, name, new_tensor = self.storedweights_vae[name].clone().to(devices.device) )
+
+def vaedealer2(self):
+    for name in VAEKEYS2:
+        if name not in self.storedweights_vae2:
+            self.storedweights_vae2[name] = getset_nested_module_tensor(True, shared.sd_model, name).clone()
+        new_weight = self.storedweights_vae2[name].to(devices.device) * (1 + self.saturation2 * 0.02) 
+        getset_nested_module_tensor(False,shared.sd_model, name, new_tensor = new_weight)
+
+def vaeunloader2(self):
+    for name in VAEKEYS2 and self.storedweights_vae2:
+        getset_nested_module_tensor(False,shared.sd_model, name, new_tensor = self.storedweights_vae2[name].clone().to(devices.device) )
 
 def stopper(self,pas,step):
     judge = False
@@ -636,11 +667,14 @@ COLORPRESET = {
 }
 
 VAEKEYS = [
-#"first_stage_model.decoder.up.3.upsample.conv.weight",
-#"first_stage_model.decoder.up.2.upsample.conv.weight",
 "first_stage_model.decoder.up.1.upsample.conv.weight",
-#"first_stage_model.decoder.up.1.block.0.nin_shortcut.weight",
 "first_stage_model.decoder.up.0.block.0.nin_shortcut.weight",
-#"first_stage_model.decoder.conv_in.weight",
-#"first_stage_model.decoder.conv_out.weight",
+]
+
+VAEKEYS2 = [
+"first_stage_model.decoder.up.3.upsample.conv.weight",
+"first_stage_model.decoder.up.2.upsample.conv.weight",
+"first_stage_model.decoder.up.1.block.0.nin_shortcut.weight",
+"first_stage_model.decoder.conv_in.weight",
+"first_stage_model.decoder.conv_out.weight",
 ]
