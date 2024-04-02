@@ -180,18 +180,18 @@ class Script(modules.scripts.Script):
                 text = [""] + text
                 return [gr.update(value = x) for x in text]
 
-            refresh_d1.click(fn=lambda x:gr.update(value = 0),outputs=[d1], show_progress=False)
-            refresh_d2.click(fn=lambda x:gr.update(value = 0),outputs=[d2], show_progress=False)
-            refresh_hd1.click(fn=lambda x:gr.update(value = 0),outputs=[hd1], show_progress=False)
-            refresh_hd2.click(fn=lambda x:gr.update(value = 0),outputs=[hd2], show_progress=False)
-            refresh_cont1.click(fn=lambda x:gr.update(value = 0),outputs=[cont1], show_progress=False)
-            refresh_cont2.click(fn=lambda x:gr.update(value = 0),outputs=[cont2], show_progress=False)
-            refresh_col1.click(fn=lambda x:gr.update(value = 0),outputs=[col1], show_progress=False)
-            refresh_col2.click(fn=lambda x:gr.update(value = 0),outputs=[col2], show_progress=False)
-            refresh_col3.click(fn=lambda x:gr.update(value = 0),outputs=[col3], show_progress=False)
-            refresh_bri.click(fn=lambda x:gr.update(value = 0),outputs=[bri], show_progress=False)
-            refresh_sat.click(fn=lambda x:gr.update(value = 0),outputs=[sat], show_progress=False)
-            refresh_sat2.click(fn=lambda x:gr.update(value = 0),outputs=[sat2], show_progress=False)
+            refresh_d1.click(fn=lambda:gr.update(value = 0),outputs=[d1], show_progress=False)
+            refresh_d2.click(fn=lambda:gr.update(value = 0),outputs=[d2], show_progress=False)
+            refresh_hd1.click(fn=lambda:gr.update(value = 0),outputs=[hd1], show_progress=False)
+            refresh_hd2.click(fn=lambda:gr.update(value = 0),outputs=[hd2], show_progress=False)
+            refresh_cont1.click(fn=lambda:gr.update(value = 0),outputs=[cont1], show_progress=False)
+            refresh_cont2.click(fn=lambda:gr.update(value = 0),outputs=[cont2], show_progress=False)
+            refresh_col1.click(fn=lambda:gr.update(value = 0),outputs=[col1], show_progress=False)
+            refresh_col2.click(fn=lambda:gr.update(value = 0),outputs=[col2], show_progress=False)
+            refresh_col3.click(fn=lambda:gr.update(value = 0),outputs=[col3], show_progress=False)
+            refresh_bri.click(fn=lambda:gr.update(value = 0),outputs=[bri], show_progress=False)
+            refresh_sat.click(fn=lambda:gr.update(value = 0),outputs=[sat], show_progress=False)
+            refresh_sat2.click(fn=lambda:gr.update(value = 0),outputs=[sat2], show_progress=False)
 
             params = [active,d1,d2,cont1,cont2,bri,col1,col2,col3,hd1,hd2,scaling,stop,stoph,sat,sat2]
             paramsc = [ratios,cmode,colors,fst,att]
