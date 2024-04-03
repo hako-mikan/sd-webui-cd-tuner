@@ -130,7 +130,7 @@ class Script(modules.scripts.Script):
                     stop = gr.Slider(label="Stop Step", minimum=-1, maximum=20, value=-1, step=1)
                     stoph = gr.Slider(label="Hr-Stop Step", minimum=-1, maximum=20, value=-1, step=1)
                 with gr.Row():
-                    opts = gr.CheckboxGroup(choices=["Apply once"])
+                    opts = gr.CheckboxGroup(choices=["Apply once"],show_label = False)
 
             with gr.Tab("Color Map"):
                 with gr.Row():
