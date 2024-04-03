@@ -159,14 +159,16 @@ class Script(modules.scripts.Script):
                 if debug : print(text)
                 text = text.split(",")
                 if len(text) == 9:
-                    outs = [float(x) for x in text[0:3]] +[0] * 2 + [float(x) for x in text[3:8]] + [text[-1] == "1"] + [-1] *2
+                    outs = [float(x) for x in text[0:3]] +[0] * 2 + [float(x) for x in text[3:8]] + [text[-1] == "1"] + [-1] *2 + [0,0]
                     outs.insert(3,0)
                 elif len(text) == 13:
-                    outs = [float(x) for x in text[:10]] + [text[10] == "1"] + [float(x) for x in text[11:]] + [0]
+                    outs = [float(x) for x in text[:10]] + [text[10] == "1"] + [float(x) for x in text[11:]] + [0,0]
                 elif len(text) == 14:
+                    outs = [float(x) for x in text[:10]] + [text[10] == "1"] + [float(x) for x in text[11:]] + [0]
+                elif len(text) == 15:
                     outs = [float(x) for x in text[:10]] + [text[10] == "1"] + [float(x) for x in text[11:]] 
                 else:
-                    outs = [0] * 10 + [False] + [-1] *2 + [0]
+                    outs = [0] * 10 + [False] + [-1] *2 + [0, 0]
                 outs = [""] + [True] + outs
                 return [gr.update(value = x) for x in outs]
 
