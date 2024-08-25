@@ -21,7 +21,10 @@ CONFIG = shared.cmd_opts.ui_config_file
 
 DEFAULTC = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 0, 0, 0]
 
+# Check for Gradio version 4; see Forge architecture rework
 IS_GRADIO_4 = version.parse(gr.__version__) >= version.parse("4.0.0")
+# check if Forge or auto1111 pure; extremely hacky
+IS_FORGE = hasattr(shared, "default_sd_model_file") and "webui-forge" in shared.default_sd_model_file
 
 if os.path.exists(CONFIG):
     with open(CONFIG, 'r', encoding="utf-8") as json_file:
@@ -329,7 +332,7 @@ class Script(modules.scripts.Script):
     def postprocess_batch(self, p, *args,**kwargs):
         print("postprocess_batch")
         if True in self.done: 
-            restoremodel_l(shared.sd_model.forge_objects_after_applying_lora.unet.model)
+            restoremodel_l(shared.sd_model.forge_objects_after_applying_lora.unet.model if IS_FORGE else shared.sd_model)
             restoremodel(self)
         if self.saturation != 0:
             vaeunloader(self)
@@ -413,7 +416,7 @@ class Script(modules.scripts.Script):
     def denoised_callback(self, params: CFGDenoisedParams):
         if self.active:
             if self.isrefiner:
-                restoremodel_l(shared.sd_model.forge_objects_after_applying_lora.unet.model)
+                restoremodel_l(shared.sd_model.forge_objects_after_applying_lora.unet.model if IS_FORGE else shared.sd_model)
                 restoremodel(self)
             if self.hr and not self.pas: return
             if params.sampling_step == params.total_sampling_steps-2 -self.sts[2]: 
@@ -451,7 +454,7 @@ def stopper(self,pas,step):
     if step >= self.sts[pas]:
         judge = True
     if judge and self.done[pas]:
-        restoremodel_l(shared.sd_model.forge_objects_after_applying_lora.unet.model)
+        restoremodel_l(shared.sd_model.forge_objects_after_applying_lora.unet.model if IS_FORGE else shared.sd_model)
         restoremodel(self)
         self.done[pas] = False
     return judge
@@ -601,12 +604,14 @@ def latentfromrgb(rgb):
     outs = [[y * rgb[i] for y in x] for i,x in enumerate(COLS[1:])]
     return [sum(x) for x in zip(*outs)]
 
+forge_prefix = "forge_objects_after_applying_lora.unet." if IS_FORGE else ""
+
 ADJUSTS =[
-"forge_objects_after_applying_lora.unet.model.diffusion_model.input_blocks.0.0.weight",
-"forge_objects_after_applying_lora.unet.model.diffusion_model.input_blocks.0.0.bias",
-"forge_objects_after_applying_lora.unet.model.diffusion_model.out.0.weight",
-"forge_objects_after_applying_lora.unet.model.diffusion_model.out.0.bias",
-"forge_objects_after_applying_lora.unet.model.diffusion_model.out.2.bias",
+f"{forge_prefix}model.diffusion_model.input_blocks.0.0.weight",
+f"{forge_prefix}model.diffusion_model.input_blocks.0.0.bias",
+f"{forge_prefix}model.diffusion_model.out.0.weight",
+f"{forge_prefix}model.diffusion_model.out.0.bias",
+f"{forge_prefix}model.diffusion_model.out.2.bias",
 ]
 
 NAMES =[
