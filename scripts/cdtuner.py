@@ -329,7 +329,7 @@ class Script(modules.scripts.Script):
     def postprocess_batch(self, p, *args,**kwargs):
         print("postprocess_batch")
         if True in self.done: 
-            restoremodel_l(shared.sd_model)
+            restoremodel_l(shared.sd_model.forge_objects_after_applying_lora.unet.model)
             restoremodel(self)
         if self.saturation != 0:
             vaeunloader(self)
@@ -413,7 +413,7 @@ class Script(modules.scripts.Script):
     def denoised_callback(self, params: CFGDenoisedParams):
         if self.active:
             if self.isrefiner:
-                restoremodel_l(shared.sd_model)
+                restoremodel_l(shared.sd_model.forge_objects_after_applying_lora.unet.model)
                 restoremodel(self)
             if self.hr and not self.pas: return
             if params.sampling_step == params.total_sampling_steps-2 -self.sts[2]: 
@@ -451,7 +451,7 @@ def stopper(self,pas,step):
     if step >= self.sts[pas]:
         judge = True
     if judge and self.done[pas]:
-        restoremodel_l(shared.sd_model)
+        restoremodel_l(shared.sd_model.forge_objects_after_applying_lora.unet.model)
         restoremodel(self)
         self.done[pas] = False
     return judge
@@ -602,11 +602,11 @@ def latentfromrgb(rgb):
     return [sum(x) for x in zip(*outs)]
 
 ADJUSTS =[
-"model.diffusion_model.input_blocks.0.0.weight",
-"model.diffusion_model.input_blocks.0.0.bias",
-"model.diffusion_model.out.0.weight",
-"model.diffusion_model.out.0.bias",
-"model.diffusion_model.out.2.bias",
+"forge_objects_after_applying_lora.unet.model.diffusion_model.input_blocks.0.0.weight",
+"forge_objects_after_applying_lora.unet.model.diffusion_model.input_blocks.0.0.bias",
+"forge_objects_after_applying_lora.unet.model.diffusion_model.out.0.weight",
+"forge_objects_after_applying_lora.unet.model.diffusion_model.out.0.bias",
+"forge_objects_after_applying_lora.unet.model.diffusion_model.out.2.bias",
 ]
 
 NAMES =[
