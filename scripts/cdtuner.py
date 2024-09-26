@@ -405,9 +405,19 @@ class Script(modules.scripts.Script):
                 if name not in self.storedweights.keys() or self.isrefiner:
                     self.storedweights[name] = getset_nested_module_tensor(True, shared.sd_model, name).clone()
                 if 4 > i:
-                    new_weight = self.storedweights[name].to(devices.device) * ratios[i]
+                    dtype = self.storedweights[name].dtype
+                    new_weight = self.storedweights[name].to(devices.device, devices.dtype) * torch.tensor(ratios[i]).to(devices.device,devices.dtype)
+                    if dtype == torch.float8_e4m3fn:
+                        self.storedweights[name] = self.storedweights[name].to(dtype)
+                    else:
+                        self.storedweights[name] = self.storedweights[name].to(devices.dtype)
                 else:
-                    new_weight = self.storedweights[name].to(devices.device) +  torch.tensor(ratios[i]).to(devices.device,devices.dtype)
+                    dtype = self.storedweights[name].dtype
+                    new_weight = self.storedweights[name].to(devices.device,devices.dtype) +  torch.tensor(ratios[i]).to(devices.device,devices.dtype)
+                    if dtype == torch.float8_e4m3fn:
+                        self.storedweights[name] = self.storedweights[name].to(dtype)
+                    else:
+                        self.storedweights[name] = self.storedweights[name].to(devices.dtype)
                 getset_nested_module_tensor(False,shared.sd_model, name, new_tensor = new_weight)
             
             self.shape = params.x.shape
