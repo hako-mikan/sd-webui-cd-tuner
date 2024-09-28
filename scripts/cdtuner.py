@@ -330,7 +330,6 @@ class Script(modules.scripts.Script):
             self.cdt_dd_callbacks = on_cfg_denoised(self.denoised_callback)
 
     def postprocess_batch(self, p, *args,**kwargs):
-        print("postprocess_batch")
         if True in self.done: 
             restoremodel_l(shared.sd_model.forge_objects_after_applying_lora.unet.model if IS_FORGE else shared.sd_model)
             restoremodel(self)
