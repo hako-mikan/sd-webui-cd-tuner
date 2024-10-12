@@ -25,6 +25,12 @@ DEFAULTC = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 0, 0, 0]
 IS_GRADIO_4 = version.parse(gr.__version__) >= version.parse("4.0.0")
 # check if Forge or auto1111 pure; extremely hacky
 IS_FORGE = hasattr(shared, "default_sd_model_file") and "webui-forge" in shared.default_sd_model_file
+try:
+    from modules.script_callbacks import AfterCFGCallbackParams, on_cfg_after_cfg
+    IS_FORGE = True
+except:
+    IS_FORGE = False
+denoised_params = AfterCFGCallbackParams if IS_FORGE else CFGDenoisedParams
 
 if os.path.exists(CONFIG):
     with open(CONFIG, 'r', encoding="utf-8") as json_file:
@@ -326,8 +332,12 @@ class Script(modules.scripts.Script):
         if not hasattr(self,"cdt_dr_callbacks"):
             self.cdt_dr_callbacks = on_cfg_denoiser(self.denoiser_callback)
 
-        if not hasattr(self,"cdt_dd_callbacks"):
-            self.cdt_dd_callbacks = on_cfg_denoised(self.denoised_callback)
+        if IS_FORGE:
+            if not hasattr(self,"cdt_dd_callbacks"):            
+                self.cdt_dd_callbacks = on_cfg_after_cfg(self.denoised_callback)
+        else:
+            if not hasattr(self,"cdt_dd_callbacks"):
+                self.cdt_dd_callbacks = on_cfg_denoised(self.denoised_callback)
 
     def postprocess_batch(self, p, *args,**kwargs):
         if True in self.done: 
@@ -422,7 +432,7 @@ class Script(modules.scripts.Script):
             self.shape = params.x.shape
 
 
-    def denoised_callback(self, params: CFGDenoisedParams):
+    def denoised_callback(self, params: denoised_params):
         if self.active:
             if self.isrefiner:
                 restoremodel_l(shared.sd_model.forge_objects_after_applying_lora.unet.model if IS_FORGE else shared.sd_model)
@@ -614,6 +624,7 @@ def latentfromrgb(rgb):
     return [sum(x) for x in zip(*outs)]
 
 forge_prefix = "forge_objects_after_applying_lora.unet." if IS_FORGE else ""
+forge_prefix_v = "forge_objects_after_applying_lora.vae." if IS_FORGE else ""
 
 ADJUSTS =[
 f"{forge_prefix}model.diffusion_model.input_blocks.0.0.weight",
@@ -687,16 +698,16 @@ COLORPRESET = {
 }
 
 VAEKEYS = [
-"first_stage_model.decoder.up.1.upsample.conv.weight",
-"first_stage_model.decoder.up.0.block.0.nin_shortcut.weight",
+f"{forge_prefix_v}first_stage_model.decoder.up.1.upsample.conv.weight",
+f"{forge_prefix_v}first_stage_model.decoder.up.0.block.0.nin_shortcut.weight",
 ]
 
 VAEKEYS2 = [
-"first_stage_model.decoder.up.3.upsample.conv.weight",
-"first_stage_model.decoder.up.2.upsample.conv.weight",
-"first_stage_model.decoder.up.1.block.0.nin_shortcut.weight",
-"first_stage_model.decoder.conv_in.weight",
-"first_stage_model.decoder.conv_out.weight",
+f"{forge_prefix_v}first_stage_model.decoder.up.3.upsample.conv.weight",
+f"{forge_prefix_v}first_stage_model.decoder.up.2.upsample.conv.weight",
+f"{forge_prefix_v}first_stage_model.decoder.up.1.block.0.nin_shortcut.weight",
+f"{forge_prefix_v}first_stage_model.decoder.conv_in.weight",
+f"{forge_prefix_v}first_stage_model.decoder.conv_out.weight",
 ]
 
 
