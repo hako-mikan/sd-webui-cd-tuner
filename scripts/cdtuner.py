@@ -24,12 +24,16 @@ DEFAULTC = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 0, 0, 0]
 # Check for Gradio version 4; see Forge architecture rework
 IS_GRADIO_4 = version.parse(gr.__version__) >= version.parse("4.0.0")
 # check if Forge or auto1111 pure; extremely hacky
-IS_FORGE = hasattr(shared, "default_sd_model_file") and "webui-forge" in shared.default_sd_model_file
+
 try:
-    from modules.script_callbacks import AfterCFGCallbackParams, on_cfg_after_cfg
+    from modules_forge import forge_version
     IS_FORGE = True
 except:
     IS_FORGE = False
+
+if IS_FORGE:
+    from modules.script_callbacks import AfterCFGCallbackParams, on_cfg_after_cfg
+
 denoised_params = AfterCFGCallbackParams if IS_FORGE else CFGDenoisedParams
 
 if os.path.exists(CONFIG):
