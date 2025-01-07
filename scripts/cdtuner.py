@@ -11,6 +11,7 @@ import modules
 from functools import wraps
 from modules import devices, shared, extra_networks
 from modules.script_callbacks import CFGDenoiserParams, on_cfg_denoiser,CFGDenoisedParams, on_cfg_denoised
+from modules.ui_components import InputAccordion
 from packaging import version
 
 debug = False
@@ -93,9 +94,8 @@ class Script(modules.scripts.Script):
     def ui(self, is_img2img):      
         resetsymbol = '\U0001F5D1\U0000FE0F'
 
-        with gr.Accordion(f"CD Tuner : {active_i if is_img2img else active_t}",open = False) as acc:
+        with InputAccordion(startup_i if is_img2img else startup_t, label=self.title()) as active:
             with gr.Row():
-                active = gr.Checkbox(value=True, label="Active",interactive=True,elem_id="cdt-active")
                 toggle = gr.Button(value=f"Toggle startup with Active(Now:{startup_i if is_img2img else startup_t})")
             with gr.Tab("Color/Detail"):
                 with gr.Row():
@@ -226,7 +226,7 @@ class Script(modules.scripts.Script):
 
                 with open(CONFIG, 'r', encoding="utf-8") as json_file:
                     data = json.load(json_file)
-                data[key] = not data[key]
+                data[key] = not data.get(key, False)
 
                 with open(CONFIG, 'w', encoding="utf-8") as json_file:
                     json.dump(data, json_file, indent=4) 
@@ -234,7 +234,6 @@ class Script(modules.scripts.Script):
                 return gr.update(value = f"Toggle startup Active(Now:{data[key]})")
 
             toggle.click(fn=f_toggle,inputs=[gr.Checkbox(value = is_img2img, visible = False)],outputs=[toggle])
-            active.change(fn=lambda x:gr.update(label = f"CD Tuner : {'Active' if x else 'Not Active'}"),inputs=active, outputs=[acc])
 
 
         self.infotext_fields = ([(allsets,"CDT"),(allsets_c,"CDTC")])
