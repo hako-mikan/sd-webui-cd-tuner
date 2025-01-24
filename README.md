@@ -114,6 +114,7 @@ When you input 3 values, they are treated as specifications for the three colors
 5 0 0;0 5 5;0 0 -5;5 5 5
 ```
 indicates red, blue, yellow, and purple respectively. For color specifications, please refer to the table provided at the end.
+Error occurs when the number of colors is insufficient for the specified number of regions. For example, if you specify regions as `1,1,1` and the colors as `5,5,0;0,5,5` the number of colors will be insufficient, resulting in an error. If you do not want to apply any color changes, please input `0,0,0`.
 
 ### Map Stop Step/Strength
 Specify the number of steps for color correction and the intensity of the correction. Typically, it is Step 1-3, Strength 1, but it's also possible to extend the step count (e.g., 10) and decrease the strength (e.g., 0.5).
@@ -215,7 +216,7 @@ Color Mapタブで操作します。
 5 0 0;0 5 5;0 0 -5;5 5 5
 ```
 はそれぞれ赤、青、黄色、紫を指定しています。色の指定は最後にある対照表を参考にしてください。
-
+指定された領域数に対し、色の数が少ないときはエラーが発生します。例えば1,1,1という領域を指定したときに色が5,5,0;0,5,5だと色の数が少ないのでエラーになります。色の変化を加えない場合には0,0,0を入れてください。
 ### Map Stop Step/Strength
 色の補正を行うステップ数をと、補正の強さを指定します。基本はStep 1～3,Strength 1ですが、ステップ数を長くして(10)Strengthを小さくする(0.5)運用も可能です。
 
