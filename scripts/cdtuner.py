@@ -11,7 +11,6 @@ import modules
 from functools import wraps
 from modules import devices, shared, extra_networks
 from modules.script_callbacks import CFGDenoiserParams, on_cfg_denoiser,CFGDenoisedParams, on_cfg_denoised
-from modules.ui_components import InputAccordion
 from packaging import version
 
 debug = False
@@ -21,10 +20,6 @@ CD_I = "customscript/cdtuner.py/img2img/Active/value"
 CONFIG = shared.cmd_opts.ui_config_file
 
 DEFAULTC = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 0, 0, 0]
-
-# Check for Gradio version 4; see Forge architecture rework
-IS_GRADIO_4 = version.parse(gr.__version__) >= version.parse("4.0.0")
-# check if Forge or auto1111 pure; extremely hacky
 
 try:
     from modules_forge import forge_version
@@ -215,10 +210,10 @@ class Script(modules.scripts.Script):
             params = [active,d1,d2,cont1,cont2,bri,col1,col2,col3,hd1,hd2,scaling,stop,stoph,sat,sat2]
             paramsc = [ratios,cmode,colors,fst,att]
 
-            allsets = gr.Textbox(visible = False)
+            allsets = gr.Textbox(visible = False, value="")
             allsets.change(fn=infotexter,inputs = [allsets], outputs =[allsets] + params)
 
-            allsets_c = gr.Textbox(visible = False)
+            allsets_c = gr.Textbox(visible = False, value="")
             allsets_c.change(fn=infotexter_c,inputs = [allsets_c], outputs =[allsets_c] +paramsc)
 
             def f_toggle(is_img2img):
@@ -714,6 +709,59 @@ f"{forge_prefix_v}first_stage_model.decoder.conv_out.weight",
 ]
 
 
+class InputAccordionImpl(gr.Checkbox):
+    webui_do_not_create_gradio_pyi_thank_you = True
+    global_index = 2244096 + 1
+
+    @wraps(gr.Checkbox.__init__)
+    def __init__(self, value=None, setup=False, **kwargs):
+        if not setup:
+            super().__init__(value=value, **kwargs)
+            return
+
+        self.accordion_id = kwargs.get('elem_id')
+        if self.accordion_id is None:
+            self.accordion_id = f"input-accordion-m-{InputAccordionImpl.global_index}"
+            InputAccordionImpl.global_index += 1
+
+        kwargs_checkbox = {
+            **kwargs,
+            "elem_id": f"{self.accordion_id}-checkbox",
+            "visible": False,
+        }
+        super().__init__(value=value, **kwargs_checkbox)
+        self.change(fn=None, _js='function(checked){ inputAccordionChecked("' + self.accordion_id + '", checked); }', inputs=[self])
+
+        kwargs_accordion = {
+            **kwargs,
+            "elem_id": self.accordion_id,
+            "label": kwargs.get('label', 'Accordion'),
+            "elem_classes": ['input-accordion-m'],
+            "open": False,
+        }
+
+        self.accordion = gr.Accordion(**kwargs_accordion)
+
+    def extra(self):
+        return gr.Column(elem_id=self.accordion_id + '-extra', elem_classes='input-accordion-extra', min_width=0)
+
+    def __enter__(self):
+        self.accordion.__enter__()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.accordion.__exit__(exc_type, exc_val, exc_tb)
+
+    def get_block_name(self):
+        return "checkbox"
+
+def InputAccordion(value=None, **kwargs):
+    return InputAccordionImpl(value=value, setup=True, **kwargs)
+
+# Check for Gradio version 4; see Forge architecture rework
+IS_GRADIO_4 = version.parse(gr.__version__) >= version.parse("4.0.0")
+# check if Forge or auto1111 pure; extremely hacky
+
 # Forge patches
 
 # See discussion at, class versus instance __module__
@@ -721,3 +769,4 @@ f"{forge_prefix_v}first_stage_model.decoder.conv_out.weight",
 # Hack for Forge with Gradio 4.0; see `get_component_class_id` in `venv/lib/site-packages/gradio/components/base.py`
 if IS_GRADIO_4:
     ToolButton.__module__ = "modules.ui_components"
+    InputAccordionImpl.__module__ = "modules.ui_components"
