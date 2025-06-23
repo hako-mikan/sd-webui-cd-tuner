@@ -638,7 +638,7 @@ NAMES =[
 "model.diffusion_model.out.2",
 ]
 
-IDENTIFIER = ["d1","d2","con1","con2","bri","col1","col2","col3","hd1","hd2","hrs","st1","st2","dis","sat"]
+IDENTIFIER = ["d1","d2","con1","con2","bri","col1","col2","col3","hd1","hd2","hrs","st1","st2","dis","sat","sat2"]
 IDENTIFIER_C = ["sp","md","cols","stc","str"]
 
 
