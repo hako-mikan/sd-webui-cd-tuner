@@ -24,7 +24,7 @@ Update 2023.07.13.0030(JST)
 
 ![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/sample0.png)
 # Overview
-This is an extension to modify the amount of detailing and color tone in the output image. It intervenes in the generation process, not on the image after it's generated. It works on a mechanism different from LoRA and is compatible with 1.X and 2.X series. In particular, it can significantly improve the quality of generated products during Hires.fix.
+This is an extension to modify the amount of detailing and color tone in the output image. It intervenes in the generation process, not on the image after it's generated. It works on a mechanism different from LoRA and is compatible with 1.X, 2.X, and XL series. In particular, it can significantly improve the quality of generated products during Hires.fix.
 
 ## Usage
 It automatically activates when any value is set to non-zero. Please be careful as inevitably the amount of noise increases as the amount of detailing increases. During the use of Hires.fix, the output might look different, so it is recommended to try with expected settings. Values around 5 should be good, but it also depends on the model. If a positive value is input, the detailing will increase.
