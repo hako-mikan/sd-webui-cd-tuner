@@ -177,7 +177,7 @@ class Script(modules.scripts.Script):
                     outs = [float(x) for x in text[:10]] + [text[10] == "1"] + [float(x) for x in text[11:]] + [0,0]
                 elif len(text) == 14:
                     outs = [float(x) for x in text[:10]] + [text[10] == "1"] + [float(x) for x in text[11:]] + [0]
-                elif len(text) == 15:
+                elif len(text) == 15 or len(text) == 16:
                     outs = [float(x) for x in text[:10]] + [text[10] == "1"] + [float(x) for x in text[11:]] 
                 else:
                     outs = [0] * 10 + [False] + [-1] *2 + [0, 0]
@@ -290,7 +290,7 @@ class Script(modules.scripts.Script):
                 else:
                     self.hr = False
 
-                p.extra_generation_params.update({"CDT":",".join([str(x) for x in allsets[:-2] + [allsets[-1]]])})
+                p.extra_generation_params.update({"CDT":",".join([str(x) for x in (allsets[:-2] + allsets[-2:])])})
 
                 self.storedname = shared.opts.sd_model_checkpoint
 
