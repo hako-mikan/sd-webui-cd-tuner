@@ -70,6 +70,13 @@ class Script(modules.scripts.Script):
         self.saturation = 0
         self.saturation2 = 0
 
+        self.adjusts = list(ADJUSTS)
+        self.bias_layout = None
+        self.latent_channels = 4
+        self.bright_dir = None
+        self.vaekeys = list(VAEKEYS)
+        self.vaekeys2 = list(VAEKEYS2)
+
         #Color map
         self.activec = False
         self.ocells = []
@@ -269,7 +276,13 @@ class Script(modules.scripts.Script):
         if debug: print("\n",allsets)
         if debug: print("\n",allsets_c)
 
-        self.isxl = hasattr(shared.sd_model,"conditioner")
+        # "conditioner" only exists on the A1111 backend, on Forge an SDXL model
+        # was detected as SD1.5 and used the wrong colour table
+        self.isxl = getattr(shared.sd_model, "is_sdxl", False) or hasattr(shared.sd_model,"conditioner")
+        self.adjusts, self.bias_layout = get_adjusts(shared.sd_model)
+        self.latent_channels = latent_channels(shared.sd_model)
+        self.bright_dir = brightness_direction(shared.sd_model)
+        self.vaekeys, self.vaekeys2 = vae_keys(shared.sd_model)
 
         self.isrefiner = getattr(p, "refiner_switch_at") is not None
 
@@ -354,13 +367,23 @@ class Script(modules.scripts.Script):
         #print(self.activec,self.colors,self.ocells,self.icells,params.sampling_step)
         if self.activec:
             if self.shape is None:self.shape = params.x.shape
-            if params.x.shape[2] * params.x.shape[3] > self.shape[2]*self.shape[3]:
+            if params.x.shape[-2] * params.x.shape[-1] > self.shape[-2]*self.shape[-1]:
                 self.colored = 0
                 self.pas = 1
-            if self.colored == params.sampling_step and self.colored < self.fst:
+            # The A1111 backend passes [cond, uncond] in one tensor and the colour is
+            # subtracted from the cond half. Forge runs the denoiser once per half, so
+            # the whole tensor is the slice below: it has to be subtracted there too,
+            # or a preset comes out as its complementary colour, and both halves have
+            # to be reached, or only one of them is coloured and the effect is a
+            # fraction of what it is on A1111.
+            cond_last = params.x.shape[0] > self.batch
+            passes = 1 if cond_last else 2
+            if self.colored // passes == params.sampling_step and self.colored // passes < self.fst:
                 c = 0
                 scale = torch.mean(torch.abs(params.x[:,:,:,:]))
-                h,w = params.x.shape[2], params.x.shape[3]
+                h,w = params.x.shape[-2], params.x.shape[-1]
+                # the Wan latent of Anima and Krea2 has a frame dimension, so the
+                # region is always addressed through the last two dimensions
                 enhance = 6
                 hr_att = 0.25 if self.pas else 1
                 for i,ocell in enumerate(self.ocells):
@@ -372,13 +395,38 @@ class Script(modules.scripts.Script):
                             s3 = slice(int(h*icell[0]),int(h*icell[1]))
                             s4 = slice(int(w*ocell[0]),int(w*ocell[1]))
 
-                        for s2 in range(1,4):
-                            scale = torch.mean(torch.abs(params.x[:,s2,:,:])) 
-                            cratio =(sum(abs(x * 50) for x in colorcalc(self.colors[c],self.isxl)))/10 * (1/(1+(1 + params.sampling_step)**1.5/10)) * self.att * hr_att * self.satt
-                            if 0 > cratio : continue
-                            params.x[:-self.batch,s2,s3,s4] =(1 - cratio) * params.x[:-self.batch,s2,s3,s4] - colorcalc(self.colors[c],self.isxl)[s2-1]*enhance * scale * cratio
-                            params.x[-self.batch:,s2,s3,s4] =(1 - cratio) * params.x[-self.batch:,s2,s3,s4] + colorcalc(self.colors[c],self.isxl)[s2-1]*enhance * scale * cratio
-                            
+                        colorvec = colorcalc(self.colors[c],self.isxl,shared.sd_model)
+                        if len(colorvec) > 3:
+                            peak = max(abs(x) for x in colorvec) or 1.0
+                            wanted = MAP_PEAK * sum(abs(x) for x in self.colors[c])
+                            colorvec = [x / peak * wanted for x in colorvec]
+                            # 16 channel latent: every channel carries colour, and the
+                            # magnitude is normalised so a slider value pushes as hard
+                            # as it does on a 4 channel one
+                            targets = list(range(min(len(colorvec), params.x.shape[1])))
+                            offsets = list(colorvec)
+                            weight = 3.0 / len(colorvec)
+                            # the 4 channel path leaves the luminance channel alone and
+                            # only blends the colour ones. Every channel of a 16 channel
+                            # latent carries structure, so blending them all replaces the
+                            # image with a flat colour: add the shift instead
+                            keep = 1.0
+                        else:
+                            targets = [1,2,3]
+                            offsets = [0.0] + list(colorvec)
+                            weight = 1.0
+                            keep = None
+                        cratio =(sum(abs(x * 50) for x in colorvec))/10 * weight * (1/(1+(1 + params.sampling_step)**1.5/10)) * self.att * hr_att * self.satt
+                        if 0 > cratio :
+                            c += 1
+                            continue
+                        for s2 in targets:
+                            scale = torch.mean(torch.abs(params.x[:,s2]))
+                            blend = (1 - cratio) if keep is None else keep
+                            shift = offsets[s2]*enhance * scale * cratio
+                            params.x[:-self.batch,s2,...,s3,s4] = blend * params.x[:-self.batch,s2,...,s3,s4] - shift
+                            params.x[-self.batch:,s2,...,s3,s4] = blend * params.x[-self.batch:,s2,...,s3,s4] + (shift if cond_last else -shift)
+
                         c += 1
                 self.colored += 1
 
@@ -408,24 +456,28 @@ class Script(modules.scripts.Script):
             ratios[:2] = [x * scale for x in ratios[:2]]
             ratios = fineman(ratios)
             if debug: print(ratios)
-            for i,name in enumerate(ADJUSTS):
+            for i,name in enumerate(self.adjusts):
+                if name is None: continue
                 if name not in self.storedweights.keys() or self.isrefiner:
                     self.storedweights[name] = getset_nested_module_tensor(True, shared.sd_model, name).clone()
-                if 4 > i:
-                    dtype = self.storedweights[name].dtype
-                    new_weight = self.storedweights[name].to(devices.device, devices.dtype) * torch.tensor(ratios[i]).to(devices.device,devices.dtype)
-                    if dtype == torch.float8_e4m3fn:
-                        self.storedweights[name] = self.storedweights[name].to(dtype)
-                    else:
-                        self.storedweights[name] = self.storedweights[name].to(devices.dtype)
+                # Work in the parameter's own dtype. A DiT usually runs in bfloat16
+                # while devices.dtype is float16, and mixing the two raises in the
+                # matmul. float8 keeps the old behaviour of computing in and writing
+                # back devices.dtype.
+                dtype = self.storedweights[name].dtype
+                if dtype == torch.float8_e4m3fn:
+                    work = dtype = devices.dtype
                 else:
-                    dtype = self.storedweights[name].dtype
-                    new_weight = self.storedweights[name].to(devices.device,devices.dtype) +  torch.tensor(ratios[i]).to(devices.device,devices.dtype)
-                    if dtype == torch.float8_e4m3fn:
-                        self.storedweights[name] = self.storedweights[name].to(dtype)
-                    else:
-                        self.storedweights[name] = self.storedweights[name].to(devices.dtype)
-                getset_nested_module_tensor(False,shared.sd_model, name, new_tensor = new_weight)
+                    work = dtype
+                base = self.storedweights[name].to(devices.device, work)
+                if 4 > i:
+                    new_weight = base * torch.tensor(ratios[i]).to(devices.device, work)
+                else:
+                    offset = ratios[i]
+                    if self.bias_layout is not None:
+                        offset = bias_offset(offset[0], self.storedweights[name].shape[0], self.latent_channels, self.bias_layout, self.bright_dir)
+                    new_weight = base + torch.as_tensor(offset).to(devices.device, work)
+                getset_nested_module_tensor(False,shared.sd_model, name, new_tensor = new_weight.to(dtype))
             
             self.shape = params.x.shape
 
@@ -438,32 +490,76 @@ class Script(modules.scripts.Script):
             if self.hr and not self.pas: return
             if params.sampling_step == params.total_sampling_steps-2 -self.sts[2]: 
                 if any(x != 0 for x in self.ddratios):
-                    ratios = [self.ddratios[0] * 0.02] +  colorcalc(self.ddratios[1:],self.isxl)
+                    colors = colorcalc(self.ddratios[1:],self.isxl,shared.sd_model)
+                    if len(colors) > 3:
+                        # 16 channel latent, the colour shift covers every channel and
+                        # cont2 keeps acting on the first one
+                        ratios = list(colors)
+                        ratios[0] += self.ddratios[0] * 0.02
+                    else:
+                        ratios = [self.ddratios[0] * 0.02] + colors
                     print(f"\nCD Tuner After Generation Effective: {ratios}")
                     for i, x in enumerate(ratios):
+                        if i >= params.x.shape[1]: break
                         params.x[:,i,:,:] = params.x[:,i,:,:] - x * 20/3
 
+def vae_decoder(sd_model):
+    try:
+        vae = sd_model.forge_objects_after_applying_lora.vae if IS_FORGE else sd_model
+        return vae.first_stage_model.decoder
+    except AttributeError:
+        return None
+
+def vae_keys(sd_model):
+    """The decoder weights the two saturation sliders scale.
+
+    The SD and the Flux autoencoders share the same decoder layout, the Wan
+    autoencoder used by Anima and Krea2 does not: its decoder is a flat Sequential
+    of residual blocks and resamplers, so the equivalent layers are looked up by
+    type instead of by a fixed path.
+    """
+    decoder = vae_decoder(sd_model)
+    if decoder is None or type(decoder).__name__ != "Decoder3d":
+        return list(VAEKEYS), list(VAEKEYS2)
+
+    root = f"{forge_prefix_v}first_stage_model.decoder."
+    blocks = list(decoder.upsamples)
+    resamples = [i for i, m in enumerate(blocks) if type(m).__name__ == "Resample"]
+    shortcuts = [i for i, m in enumerate(blocks)
+                 if type(m).__name__ == "ResidualBlock" and hasattr(getattr(m, "shortcut", None), "weight")]
+
+    keys, keys2 = [], []
+    if resamples:
+        # the resampler closest to the output, like up.1.upsample on the SD decoder
+        keys.append(f"{root}upsamples.{resamples[-1]}.resample.1.weight")
+        keys2 += [f"{root}upsamples.{i}.resample.1.weight" for i in resamples[:-1]]
+    late = [i for i in shortcuts if not resamples or i > resamples[-1]]
+    if late:
+        keys.append(f"{root}upsamples.{late[0]}.shortcut.weight")
+    keys2 += [f"{root}conv1.weight", f"{root}head.2.weight"]
+    return keys, keys2
+
 def vaedealer(self):
-    for name in VAEKEYS:
+    for name in self.vaekeys:
         if name not in self.storedweights_vae:
             self.storedweights_vae[name] = getset_nested_module_tensor(True, shared.sd_model, name).clone()
         new_weight = self.storedweights_vae[name].to(devices.device) * (1 + self.saturation * 0.075) 
         getset_nested_module_tensor(False,shared.sd_model, name, new_tensor = new_weight)
 
 def vaeunloader(self):
-    for name in VAEKEYS and self.storedweights_vae:
-        getset_nested_module_tensor(False,shared.sd_model, name, new_tensor = self.storedweights_vae[name].clone().to(devices.device) )
+    for name in self.storedweights_vae:
+        getset_nested_module_tensor(False,shared.sd_model, name, new_tensor = self.storedweights_vae[name])
 
 def vaedealer2(self):
-    for name in VAEKEYS2:
+    for name in self.vaekeys2:
         if name not in self.storedweights_vae2:
             self.storedweights_vae2[name] = getset_nested_module_tensor(True, shared.sd_model, name).clone()
         new_weight = self.storedweights_vae2[name].to(devices.device) * (1 + self.saturation2 * 0.02) 
         getset_nested_module_tensor(False,shared.sd_model, name, new_tensor = new_weight)
 
 def vaeunloader2(self):
-    for name in VAEKEYS2 and self.storedweights_vae2:
-        getset_nested_module_tensor(False,shared.sd_model, name, new_tensor = self.storedweights_vae2[name].clone().to(devices.device) )
+    for name in self.storedweights_vae2:
+        getset_nested_module_tensor(False,shared.sd_model, name, new_tensor = self.storedweights_vae2[name])
 
 def stopper(self,pas,step):
     judge = False
@@ -491,11 +587,31 @@ def getset_nested_module_tensor(clone,model, tensor_path, new_tensor = None):
     if clone : return target_module
 
     last_attr = sdmodules[-1]
-    setattr(target_module, last_attr, Parameter(new_tensor)) 
+    current = getattr(target_module, last_attr, None)
+
+    if isinstance(current, torch.Tensor) and current.shape == new_tensor.shape:
+        # Write into the existing tensor instead of replacing it. A fresh Parameter
+        # is not the object the Forge memory manager captured when it loaded the
+        # model, so it is skipped when the model is streamed to the CPU and stays
+        # behind on the GPU. The manager then believes it freed memory it did not,
+        # and the next generation fails inside the module move and is reported as an
+        # OOM even with the GPU nearly empty. Keeping the tensor also keeps its
+        # device, which matters while the model is offloaded.
+        # the backend loads the model under torch.inference_mode(), so its weights are
+        # inference tensors and can only be written to from inside that mode
+        with torch.inference_mode():
+            current.copy_(new_tensor.to(device=current.device, dtype=current.dtype))
+        return
+
+    setattr(target_module, last_attr, Parameter(new_tensor, requires_grad=False)) 
 
 def restoremodel(self):
-    for name in ADJUSTS:
-        getset_nested_module_tensor(False,shared.sd_model, name, new_tensor = self.storedweights[name].clone().to(devices.device))
+    for name in getattr(self, "adjusts", ADJUSTS):
+        if name is None or name not in self.storedweights: continue
+        # no .to(devices.device) here: the setter writes into the live tensor and
+        # keeps its device, forcing the weight onto the GPU used to strand it there
+        # whenever the model was offloaded
+        getset_nested_module_tensor(False,shared.sd_model, name, new_tensor = self.storedweights[name])
     if debug:print("Restored")
     return
 
@@ -509,10 +625,16 @@ def fineman(fine):
                 ]
     return fine
 
-def colorcalc(cols,isxl):
-    colors = COLSXL if isxl else COLS
-    outs = [[y * cols[i] * 0.02 for y in x] for i,x in enumerate(colors)]
-    return [sum(x) for x in zip(*outs)]
+def colorcalc(cols,isxl,sd_model = None):
+    # cols is [brightness, red, green, blue]
+    pinv = latent_rgb_pinv(sd_model) if sd_model is not None else None
+    if pinv is None:
+        colors = COLSXL if isxl else COLS
+        outs = [[y * cols[i] * 0.02 for y in x] for i,x in enumerate(colors)]
+        return [sum(x) for x in zip(*outs)]
+    drgb = np.array([cols[0] + cols[1], cols[0] + cols[2], cols[0] + cols[3]], dtype=np.float64)
+    # the caller subtracts the result, the sign is baked into COLS/COLSXL the same way
+    return [-float(x) * 0.02 for x in pinv @ drgb]
 
 def fromprompts(prompt):
     _, extra_network_data = extra_networks.parse_prompts(prompt)
@@ -645,6 +767,122 @@ IDENTIFIER_C = ["sp","md","cols","stc","str"]
 COLS = [[-1,1/3,2/3],[1,1,0],[0,-1,-1],[1,0,1]]
 COLSXL = [[0,0,1],[1,0,0],[-1,-1,0],[-1,1,0]]
 
+# Peak of the colour map offset per unit of slider, taken from what COLS produces.
+# The colour map amplifies by enhance * cratio and cratio is itself derived from the
+# length of the offset vector, so the effect grows with the square of that length.
+# A 16 channel latent needs much larger latent steps for the same RGB change, which
+# would overshoot by an order of magnitude, so the vector is rescaled to this peak.
+MAP_PEAK = 0.0113
+
+# ---- Forge Neo : DiT architectures -------------------------------------------
+# The UNet reads the latent with a conv, ends with a group norm and writes the
+# latent back with a second conv. A DiT only has two projections, so d2 acts on
+# the output projection instead of the final norm and the brightness offset goes
+# into that same bias.
+# The bias covers patch*patch*channels values. "block" means it is laid out as
+# [channel][patch*patch], "interleave" as [patch*patch][channel].
+#   diffusion model class            : (input, output, bias layout)
+DIT_LAYERS = {
+    "IntegratedFluxTransformer2DModel": ("img_in", "final_layer.linear", "block"),
+    "IntegratedChromaTransformer2DModel": ("img_in", "final_layer.linear", "block"),
+    "NextDiT": ("x_embedder", "final_layer.linear", "interleave"),
+    "Anima": ("x_embedder.proj.1", "final_layer.linear", "interleave"),
+    "SingleStreamDiT": ("first", "last.linear", "block"),
+}
+
+def diffusion_model(sd_model):
+    try:
+        if IS_FORGE:
+            return sd_model.forge_objects_after_applying_lora.unet.model.diffusion_model
+        return sd_model.model.diffusion_model
+    except AttributeError:
+        return None
+
+def has_param(module, path):
+    for name in path.split("."):
+        if name.isdigit():
+            try:
+                module = module[int(name)]
+            except (IndexError, TypeError, KeyError):
+                return False
+        else:
+            module = getattr(module, name, None)
+        if module is None:
+            return False
+    return True
+
+def get_adjusts(sd_model):
+    """The weight paths to touch, in the ADJUSTS order, plus the bias layout.
+
+    Entries the model does not have are None and get skipped. On a DiT the
+    output bias is a single tensor, so the d2 multiplication on it is dropped and
+    only the brightness offset is applied.
+    """
+    dm = diffusion_model(sd_model)
+    name = type(dm).__name__ if dm is not None else ""
+    if name not in DIT_LAYERS:
+        return list(ADJUSTS), None
+    src, dst, layout = DIT_LAYERS[name]
+    root = f"{forge_prefix}model.diffusion_model."
+    names = [src + ".weight", src + ".bias", dst + ".weight", None, dst + ".bias"]
+    return [(root + n if n and has_param(dm, n) else None) for n in names], layout
+
+def latent_channels(sd_model):
+    fmt = getattr(getattr(sd_model, "model_config", None), "latent_format", None)
+    return getattr(fmt, "latent_channels", 4) if fmt is not None else 4
+
+def bias_offset(value, length, channels, layout, direction = None):
+    """Offset for the output projection bias.
+
+    On the UNet this moves latent channel 0, which is the luminance channel of the
+    4 channel VAEs. A 16 channel latent has no such channel, so ``direction`` holds
+    a per channel weight and the shift follows the brightness direction instead.
+    """
+    offset = torch.zeros(length)
+    if not channels or length % channels:
+        offset[0] = value
+        return offset
+    if direction is None:
+        direction = [1.0] + [0.0] * (channels - 1)
+    per = length // channels
+    for c in range(min(channels, len(direction))):
+        weight = value * float(direction[c])
+        if weight == 0: continue
+        if layout == "interleave":
+            offset[c::channels] = weight
+        else:
+            offset[c * per:(c + 1) * per] = weight
+    return offset
+
+def brightness_direction(sd_model):
+    """Per channel weights of an equal RGB shift, scaled so the largest is 1."""
+    pinv = latent_rgb_pinv(sd_model)
+    if pinv is None:
+        return None
+    vector = pinv @ np.array([1.0, 1.0, 1.0])
+    peak = np.abs(vector).max()
+    return list(vector / peak) if peak else None
+
+_RGB_PINV = {}
+
+def latent_rgb_pinv(sd_model):
+    """Map an RGB shift onto a latent shift.
+
+    ``latent_rgb_factors`` is the least squares fit of latent -> RGB that ComfyUI
+    uses for the fast preview, and it is the published mapping for the 16 channel
+    VAEs. rgb = z @ M, so the smallest latent shift for a wanted RGB shift d is
+    z = M @ inv(M.T @ M) @ d.
+    """
+    fmt = getattr(getattr(sd_model, "model_config", None), "latent_format", None)
+    factors = getattr(fmt, "latent_rgb_factors", None)
+    if not factors or len(factors) <= 4:
+        return None
+    key = type(fmt).__name__
+    if key not in _RGB_PINV:
+        M = np.array(factors, dtype=np.float64)
+        _RGB_PINV[key] = M @ np.linalg.inv(M.T @ M)
+    return _RGB_PINV[key]
+
 def restoremodel_l(model):
     for name, module in model.named_modules():
         if name not in NAMES: continue
@@ -711,7 +949,10 @@ f"{forge_prefix_v}first_stage_model.decoder.conv_out.weight",
 
 class InputAccordionImpl(gr.Checkbox):
     webui_do_not_create_gradio_pyi_thank_you = True
-    global_index = 2244096 + 1
+    # the element id has to be unique across every extension that ships this
+    # accordion. A shared counter with a per extension offset collides as soon as
+    # the tab is built more than once (txt2img, img2img, ...)
+    global_index = 0
 
     @wraps(gr.Checkbox.__init__)
     def __init__(self, value=None, setup=False, **kwargs):
@@ -721,7 +962,7 @@ class InputAccordionImpl(gr.Checkbox):
 
         self.accordion_id = kwargs.get('elem_id')
         if self.accordion_id is None:
-            self.accordion_id = f"input-accordion-m-{InputAccordionImpl.global_index}"
+            self.accordion_id = f"input-accordion-m-cdtuner-{InputAccordionImpl.global_index}"
             InputAccordionImpl.global_index += 1
 
         kwargs_checkbox = {

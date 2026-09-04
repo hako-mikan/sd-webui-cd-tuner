@@ -5,6 +5,16 @@
 [<img src="https://img.shields.io/badge/lang-Egnlish-red.svg?style=plastic" height="25" />](#overview)
 [<img src="https://img.shields.io/badge/言語-日本語-green.svg?style=plastic" height="25" />](#概要)
 [<img src="https://img.shields.io/badge/Support-%E2%99%A5-magenta.svg?logo=github&style=plastic" height="25" />](https://github.com/sponsors/hako-mikan)
+Update 2026.09.03(JST)
+- support the DiT models of Forge NEO: Z-Image, Anima, Krea2
+- Color Map now works on the 16 channel VAEs
+- fix the Color Map on Forge, a preset used to produce its complementary colour there
+- fix SDXL detection on Forge, it used the SD1.5 colour table
+- Forge NEOのDiTモデル(Z-Image, Anima, Krea2)に対応しました
+- Color Mapが16chVAEでも動作するようになりました
+- Forge上でColor Mapが指定と補色になっていた問題を修正しました
+- Forge上でSDXLがSD1.5用の色テーブルを使っていた問題を修正しました
+
 Update 2023.12.19.2300(JST)
 - add new parameter: saturation
 - 彩度が調節できるようになりました
@@ -119,6 +129,22 @@ Error occurs when the number of colors is insufficient for the specified number 
 ### Map Stop Step/Strength
 Specify the number of steps for color correction and the intensity of the correction. Typically, it is Step 1-3, Strength 1, but it's also possible to extend the step count (e.g., 10) and decrease the strength (e.g., 0.5).
 
+The strength a model needs differs a lot, mostly with how many steps it runs and
+whether it uses CFG. Measured with Stop Step 2, a two region map and a landscape
+prompt, the colour starts steering the composition around:
+
+|model|Strength|
+|-|-|
+|SD1.5|0.2|
+|SDXL|0.35 - 0.5|
+|Z-Image (Forge NEO)|0.35|
+|Anima (Forge NEO)|0.8|
+|Krea2 (Forge NEO)|0.8 - 1.2|
+
+The distilled models on the right of that table run 8 steps at CFG 1, so they get
+no amplification from the negative side and need a larger value. Raise it until
+the layout is followed and lower it if the region turns into a flat colour.
+
 ### Effects of Correction
 While a certain colors is specified in this correction, it doesn't mean that the area will have that exact color. Although we're changing the color of the noise, images are generated based on the relationship between the prompt and the color. If the prompt does not have anything related to color, it might be disregarded. The image below was generated with the prompt `sea, autumn forest, girl` and color corrections to blue on the left and red on the right. `sea` responds to the blue noise, and `autumn forest` to the red noise, thus resulting in the image below. Think of it as a correction to enhance the responsiveness of the prompt.
 ![](https://raw.githubusercontent.com/hako-mikan/sd-webui-cd-tuner/imgs/csample3.png)
@@ -219,6 +245,18 @@ Color Mapタブで操作します。
 指定された領域数に対し、色の数が少ないときはエラーが発生します。例えば1,1,1という領域を指定したときに色が5,5,0;0,5,5だと色の数が少ないのでエラーになります。色の変化を加えない場合には0,0,0を入れてください。
 ### Map Stop Step/Strength
 色の補正を行うステップ数をと、補正の強さを指定します。基本はStep 1～3,Strength 1ですが、ステップ数を長くして(10)Strengthを小さくする(0.5)運用も可能です。
+
+必要なStrengthはモデルによって大きく変わります。主にステップ数とCFGの有無で決まります。Stop Step 2、2分割、風景プロンプトで測ったところ、色が構図を誘導し始めるのは概ね次の値です。
+
+|モデル|Strength|
+|-|-|
+|SD1.5|0.2|
+|SDXL|0.35 - 0.5|
+|Z-Image (Forge NEO)|0.35|
+|Anima (Forge NEO)|0.8|
+|Krea2 (Forge NEO)|0.8 - 1.2|
+
+右側の蒸留モデルは8ステップかつCFG 1で動作するため、ネガティブ側からの増幅が効かず大きめの値が必要です。構図が色に追従するまで上げ、領域が単色に潰れるようなら下げてください。
 
 ### 補正の影響について
 この補正では色を指定していますが、その領域がその色になるわけではありません。ノイズの色を変えていますが、プロンプトと色の関係から画像が生成されるので、プロンプトに色に関係のあるものがないと無視されることがあります。以下の画像は`sea, autumn forest, girl`というプロンプトと、左右に青と赤を補正して生成した画像です。`sea`は青いノイズに反応し、`autumn forest`は赤いノイズに反応するので以下のような画像が生成されます。あくまでプロンプトの反応をよくする補正だと考えてください。
