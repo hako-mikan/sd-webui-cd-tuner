@@ -474,7 +474,10 @@ class Script(modules.scripts.Script):
                     new_weight = base * torch.tensor(ratios[i]).to(devices.device, work)
                 else:
                     offset = ratios[i]
-                    if self.bias_layout is not None:
+                    if self.bias_layout == "moss":
+                        offset = bias_offset(offset[0], self.latent_channels, self.latent_channels, "block", self.bright_dir)
+                        offset = moss_shift_offset(offset, self.storedweights[self.adjusts[2]].to(devices.device), self.storedweights[name].shape[0])
+                    elif self.bias_layout is not None:
                         offset = bias_offset(offset[0], self.storedweights[name].shape[0], self.latent_channels, self.bias_layout, self.bright_dir)
                     new_weight = base + torch.as_tensor(offset).to(devices.device, work)
                 getset_nested_module_tensor(False,shared.sd_model, name, new_tensor = new_weight.to(dtype))
@@ -788,7 +791,15 @@ DIT_LAYERS = {
     "NextDiT": ("x_embedder", "final_layer.linear", "interleave"),
     "Anima": ("x_embedder.proj.1", "final_layer.linear", "interleave"),
     "SingleStreamDiT": ("first", "last.linear", "block"),
+    # MOSS-Image has no bias on its output projection, see moss_shift_offset
+    "MOSSImage": ("video_embedder", "final_linear_video", "moss"),
 }
+
+# The final norm of MOSS-Image takes its shift from video_head_modulation, whose
+# bias holds that shift in its first half. The output projection after the norm
+# is linear and has no bias, so a shift s comes out as W @ s on every token: the
+# brightness offset is put there, as the shift that produces it.
+MOSS_SHIFT_BIAS = "video_head_modulation.bias"
 
 def diffusion_model(sd_model):
     try:
@@ -824,8 +835,18 @@ def get_adjusts(sd_model):
         return list(ADJUSTS), None
     src, dst, layout = DIT_LAYERS[name]
     root = f"{forge_prefix}model.diffusion_model."
-    names = [src + ".weight", src + ".bias", dst + ".weight", None, dst + ".bias"]
+    names = [src + ".weight", src + ".bias", dst + ".weight", None, MOSS_SHIFT_BIAS if layout == "moss" else dst + ".bias"]
     return [(root + n if n and has_param(dm, n) else None) for n in names], layout
+
+def moss_shift_offset(offset, weight, length):
+    """The shift bias offset that makes MOSS-Image's output move by ``offset``:
+    the smallest s with W @ s = offset, in the shift half of the bias."""
+    w = weight.to(torch.float32)
+    o = offset.to(w.device, torch.float32)
+    shift = w.T @ torch.linalg.solve(w @ w.T, o)
+    full = torch.zeros(length, device=w.device)
+    full[:shift.shape[0]] = shift
+    return full
 
 def latent_channels(sd_model):
     fmt = getattr(getattr(sd_model, "model_config", None), "latent_format", None)
@@ -880,7 +901,14 @@ def latent_rgb_pinv(sd_model):
     key = type(fmt).__name__
     if key not in _RGB_PINV:
         M = np.array(factors, dtype=np.float64)
-        _RGB_PINV[key] = M @ np.linalg.inv(M.T @ M)
+        pinv = M @ np.linalg.inv(M.T @ M)
+        # The Flux.2 latent (MOSS-Image) packs 2x2 pixels of 32 channels into 128,
+        # channel c*4 + p, and its factors are given for the 32. The same shift on
+        # all four packed copies of a channel shifts that channel evenly.
+        channels = getattr(fmt, "latent_channels", len(factors))
+        if channels == 4 * len(factors):
+            pinv = np.repeat(pinv, 4, axis=0)
+        _RGB_PINV[key] = pinv
     return _RGB_PINV[key]
 
 def restoremodel_l(model):
