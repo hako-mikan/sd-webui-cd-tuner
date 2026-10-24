@@ -5,6 +5,12 @@
 [<img src="https://img.shields.io/badge/lang-Egnlish-red.svg?style=plastic" height="25" />](#overview)
 [<img src="https://img.shields.io/badge/言語-日本語-green.svg?style=plastic" height="25" />](#概要)
 [<img src="https://img.shields.io/badge/Support-%E2%99%A5-magenta.svg?logo=github&style=plastic" height="25" />](https://github.com/sponsors/hako-mikan)
+Update 2026.10.25.0100(JST)
+- support MOSS-Image in Forge NEO. Its output projection has no bias, so Contrast 1 goes through the shift of its final norm instead
+- Color Map and the colour sliders now cover all 128 channels of the Flux.2 latent
+- Forge NEOのMOSS-Imageに対応しました。出力層にbiasがないため、Contrast 1は最終normのshiftを通して効かせています
+- Color Mapと色調スライダーがFlux.2の128ch latentすべてに効くようになりました
+
 Update 2026.09.03(JST)
 - support the DiT models of Forge NEO: Z-Image, Anima, Krea2
 - Color Map now works on the 16 channel VAEs
@@ -144,6 +150,7 @@ prompt, the colour starts steering the composition around:
 |Z-Image (Forge NEO)|0.35|
 |Anima (Forge NEO)|0.8|
 |Krea2 (Forge NEO)|0.8 - 1.2|
+|MOSS-Image (Forge NEO)|0.6 - 0.8|
 
 The distilled models on the right of that table run 8 steps at CFG 1, so they get
 no amplification from the negative side and need a larger value. Raise it until
@@ -259,6 +266,7 @@ Color Mapタブで操作します。
 |Z-Image (Forge NEO)|0.35|
 |Anima (Forge NEO)|0.8|
 |Krea2 (Forge NEO)|0.8 - 1.2|
+|MOSS-Image (Forge NEO)|0.6 - 0.8|
 
 右側の蒸留モデルは8ステップかつCFG 1で動作するため、ネガティブ側からの増幅が効かず大きめの値が必要です。構図が色に追従するまで上げ、領域が単色に潰れるようなら下げてください。
 
